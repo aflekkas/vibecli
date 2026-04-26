@@ -53,6 +53,9 @@
     "docs",
     "README.md"
   ],
+  "workspaces": [
+    "templates/playground"
+  ],
   "scripts": {
     "typecheck": "bunx tsc --noEmit",
     "play": "bun --cwd templates/playground src/index.tsx",
