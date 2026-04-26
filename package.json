@@ -1,5 +1,5 @@
 {
-  "name": "vibecli",
+  "name": "@aflekkas/vibecli",
   "version": "0.0.1",
   "description": "Reusable Ink + AI SDK primitives for vibecoded CLIs.",
   "type": "module",

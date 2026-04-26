@@ -24,19 +24,19 @@ vibecli declares peer dependencies on `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai
 
 | Subpath | Purpose |
 |---|---|
-| `vibecli/text-input` | Ink `<TextInput>` with paste, undo, cursor navigation |
-| `vibecli/clipboard` | macOS clipboard text + image extraction |
-| `vibecli/highlight` | Markdown code-fence syntax highlighter |
-| `vibecli/ui` | Color math, gradient text, terminal text wrapping |
-| `vibecli/retry` | Exponential-backoff retry wrapper |
-| `vibecli/providers` | Generic `Message` / `ContentBlock` / `Provider` / `ToolDef` types |
-| `vibecli/providers/adapter` | Vercel AI SDK adapter (`AiSdkProvider`) |
+| `@aflekkas/vibecli/text-input` | Ink `<TextInput>` with paste, undo, cursor navigation |
+| `@aflekkas/vibecli/clipboard` | macOS clipboard text + image extraction |
+| `@aflekkas/vibecli/highlight` | Markdown code-fence syntax highlighter |
+| `@aflekkas/vibecli/ui` | Color math, gradient text, terminal text wrapping |
+| `@aflekkas/vibecli/retry` | Exponential-backoff retry wrapper |
+| `@aflekkas/vibecli/providers` | Generic `Message` / `ContentBlock` / `Provider` / `ToolDef` types |
+| `@aflekkas/vibecli/providers/adapter` | Vercel AI SDK adapter (`AiSdkProvider`) |
 
 ## 🚀 Usage
 
 ```ts
-import { TextInput } from "vibecli/text-input";
-import { AiSdkProvider } from "vibecli/providers/adapter";
+import { TextInput } from "@aflekkas/vibecli/text-input";
+import { AiSdkProvider } from "@aflekkas/vibecli/providers/adapter";
 import { createOpenAI } from "@ai-sdk/openai";
 
 class MyProvider extends AiSdkProvider {

@@ -21,7 +21,7 @@ src/
     └── adapter.ts                AiSdkProvider — Vercel AI SDK adapter
 ```
 
-Subpaths exposed via `package.json` `exports`. Consumers import as `vibecli/<subpath>` (e.g., `vibecli/text-input`, `vibecli/providers`, `vibecli/providers/adapter`).
+Subpaths exposed via `package.json` `exports`. Consumers import as `@aflekkas/vibecli/<subpath>` (e.g., `@aflekkas/vibecli/text-input`, `@aflekkas/vibecli/providers`, `@aflekkas/vibecli/providers/adapter`).
 
 ## Boundary (hard rule)
 

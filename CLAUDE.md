@@ -14,5 +14,5 @@ This repo's authoritative rules live in `AGENTS.md`. Read it before any change.
 ## Workflow
 
 - Live link: rawdog at `~/Documents/Projects/rawdog/` is `bun link`'d to this checkout. Edits here show up in rawdog immediately, no publish needed during iteration.
-- Public surface: `package.json` `exports` field is the source of truth for what subpaths consumers can import (`vibecli/text-input`, `vibecli/providers`, etc.). Adding a new module = also add a subpath to `exports`.
+- Public surface: `package.json` `exports` field is the source of truth for what subpaths consumers can import (`@aflekkas/vibecli/text-input`, `@aflekkas/vibecli/providers`, etc.). Adding a new module = also add a subpath to `exports`.
 - Commit style: short imperative lowercase, one behavioral change per commit. Bump-and-publish lives in its own commit.
