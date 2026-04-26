@@ -98,6 +98,8 @@ export {
   truncateStatusLine,
 } from "./status-line.ts";
 export type { StatusLineCommandOptions, StatusLinePayload } from "./status-line.ts";
+export { Picker } from "./picker.tsx";
+export type { PickerItem, PickerProps } from "./picker.tsx";
 export type {
   Role,
   ToolCall,
@@ -109,6 +111,10 @@ export type {
 } from "./providers/types.ts";
 export { AiSdkProvider } from "./providers/adapter.ts";
 export type { AdapterJsonValue, AdapterOpts, AdapterProviderOptions } from "./providers/adapter.ts";
+export { defineTheme, themes, themeNames, isThemeName } from "./themes.ts";
+export type { DefineThemeInput, ThemeName } from "./themes.ts";
+export { ThemePicker } from "./theme-picker.tsx";
+export type { ThemePickerProps } from "./theme-picker.tsx";
 export { createAgent } from "./agent.ts";
 export type {
   Agent,

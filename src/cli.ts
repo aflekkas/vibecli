@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
 
+import { createInterface } from "node:readline/promises";
 import { createProjectSkeleton, type PackageManager } from "./create-project.ts";
+import { isThemeName, themeNames, type ThemeName } from "./themes.ts";
 
 type CliOptions = {
   dir: string;
@@ -9,24 +11,35 @@ type CliOptions = {
   packageManager: PackageManager;
   vibecliVersion?: string;
   install: boolean;
+  theme?: ThemeName;
+  noPrompt: boolean;
 };
 
 function help(): string {
   return `vibecli
 
 Usage:
-  vibecli init [dir] [--name <name>] [--pm bun|npm] [--vibecli <version>] [--no-install] [--force]
+  vibecli init [dir] [--name <name>] [--pm bun|npm] [--vibecli <version>] [--theme <name>] [--no-prompt] [--no-install] [--force]
+  vibecli mcp
+
+Themes:
+  ${themeNames.join(", ")}
 
 Examples:
   vibecli init my-cli
   vibecli init . --name my-cli --pm bun
-  vibecli init my-cli --no-install
+  vibecli init my-cli --theme ocean --no-prompt
+  vibecli mcp                     # local stdio MCP server exposing this package's docs
 `;
 }
 
-function parseArgs(argv: string[]): CliOptions | "help" {
+function parseArgs(argv: string[]): CliOptions | "help" | "mcp" {
   const [command, ...args] = argv;
   if (!command || command === "--help" || command === "-h") return "help";
+  if (command === "mcp") {
+    if (args.length > 0) throw new Error(`Unexpected argument: ${args[0]}`);
+    return "mcp";
+  }
   if (command !== "init") throw new Error(`Unknown command: ${command}`);
 
   const opts: CliOptions = {
@@ -34,6 +47,7 @@ function parseArgs(argv: string[]): CliOptions | "help" {
     force: false,
     packageManager: "bun",
     install: true,
+    noPrompt: false,
   };
 
   let dirSet = false;
@@ -46,6 +60,19 @@ function parseArgs(argv: string[]): CliOptions | "help" {
     }
     if (arg === "--no-install") {
       opts.install = false;
+      continue;
+    }
+    if (arg === "--no-prompt") {
+      opts.noPrompt = true;
+      continue;
+    }
+    if (arg === "--theme") {
+      const theme = args[++i];
+      if (!theme) throw new Error("--theme requires a value");
+      if (!isThemeName(theme)) {
+        throw new Error(`--theme must be one of: ${themeNames.join(", ")}`);
+      }
+      opts.theme = theme;
       continue;
     }
     if (arg === "--name") {
@@ -75,11 +102,45 @@ function parseArgs(argv: string[]): CliOptions | "help" {
   return opts;
 }
 
+async function promptTheme(): Promise<ThemeName> {
+  const defaultName = themeNames[0]!;
+  process.stdout.write("\nPick a theme:\n");
+  themeNames.forEach((name, i) => {
+    const marker = i === 0 ? " (default)" : "";
+    process.stdout.write(`  ${i + 1}. ${name}${marker}\n`);
+  });
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = (await rl.question(`Choose [1-${themeNames.length}] (default 1): `)).trim();
+    if (!answer) return defaultName;
+    const idx = Number.parseInt(answer, 10);
+    if (Number.isFinite(idx) && idx >= 1 && idx <= themeNames.length) {
+      return themeNames[idx - 1]!;
+    }
+    if (isThemeName(answer)) return answer;
+    process.stdout.write(`Unrecognized choice "${answer}", using ${defaultName}.\n`);
+    return defaultName;
+  } finally {
+    rl.close();
+  }
+}
+
 async function main() {
   const parsed = parseArgs(process.argv.slice(2));
   if (parsed === "help") {
     process.stdout.write(help());
     return;
+  }
+
+  if (parsed === "mcp") {
+    const { runDocsMcpServer } = await import("./mcp-server.ts");
+    await runDocsMcpServer();
+    return;
+  }
+
+  let theme = parsed.theme;
+  if (!theme && !parsed.noPrompt && process.stdin.isTTY) {
+    theme = await promptTheme();
   }
 
   const result = await createProjectSkeleton({
@@ -89,14 +150,16 @@ async function main() {
     packageManager: parsed.packageManager,
     vibecliVersion: parsed.vibecliVersion,
     install: parsed.install,
+    theme,
   });
 
   process.stdout.write(`Created ${result.name} in ${result.dir}\n`);
+  process.stdout.write(`  theme: ${result.theme}\n`);
   for (const file of result.files) {
     process.stdout.write(`  ${file.action} ${file.path}\n`);
   }
   const dev = result.packageManager === "bun" ? "bun run dev" : "npm run dev";
-  process.stdout.write(`\nNext:\n  cd ${result.dir}\n  cp .env.example .env  # paste ANTHROPIC_API_KEY\n  ${dev}\n`);
+  process.stdout.write(`\nNext:\n  cd ${result.dir}\n  cp .env.example .env  # paste ANTHROPIC_API_KEY\n  ${dev}\n  (type \`/theme\` inside the running app to switch themes)\n`);
   if (!result.installed) {
     const install = result.packageManager === "bun" ? "bun install" : "npm install";
     process.stdout.write(`  (run \`${install}\` first — skipped via --no-install)\n`);

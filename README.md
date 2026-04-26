@@ -33,6 +33,27 @@ Flags: `--name <pkg>`, `--pm bun|npm`, `--vibecli <version>`, `--no-install` (sk
 
 The `vibecli` bin uses a `#!/usr/bin/env bun` shebang, so bun must be on `PATH` to invoke it directly. `bunx` is the safest entry point.
 
+## 🤖 Docs MCP
+
+Point a coding agent at the same docs you're reading right now. `bunx @aflekkas/vibecli mcp` runs **locally over stdio** — it's a thin wrapper around the README and `docs/*.md` that already ship inside the package. No hosted service, no network, no daemon: the AI client spawns the bin, the bin streams MCP messages on stdin/stdout, and the process exits when the client disconnects.
+
+The point is to give an AI agent a structured handle on the current `0.0.x` API instead of falling back to training-data guesses or stale web search.
+
+Register with Claude Code:
+
+```bash
+claude mcp add vibecli -- bunx @aflekkas/vibecli mcp
+```
+
+Any other MCP-capable client (Cursor, mcp-inspector, etc.) registers the same way against `bunx @aflekkas/vibecli mcp`.
+
+What it exposes:
+
+- **Resources**: `vibecli://readme`, `vibecli://docs/configuration`, `vibecli://docs/cli`, `vibecli://exports` (the `package.json` `exports` map plus the subpath catalog as JSON).
+- **Tools**: `list_subpaths` (every importable subpath with a one-line summary) and `get_subpath_docs({ name })` (per-subpath summary, canonical import statement, and a pointer into the README example).
+
+The server's docs version is the package's docs version. `bun update @aflekkas/vibecli` is also a docs bump for any agent connected to it.
+
 ## 🧰 What's in here
 
 Use subpath imports for focused code. The root package also re-exports the current primitives for convenience.
@@ -51,9 +72,13 @@ Use subpath imports for focused code. The root package also re-exports the curre
 | `@aflekkas/vibecli/mcp` | MCP tool/result normalization helpers for the generic provider tool types |
 | `@aflekkas/vibecli/repo-map` | Lightweight repository file map, language summary, and kind classification |
 | `@aflekkas/vibecli/status-line` | Status-line command runner and truncation helpers |
+| `@aflekkas/vibecli/picker` | `<Picker>` Ink component — paginated, single-line-per-item modal menu with title, optional subtitle, descriptions, hints, page indicator, and footer |
+| `@aflekkas/vibecli/themes` | Built-in theme registry (`pink`, `ocean`, `matrix`, `amber`, `claude`, `mono`) plus `defineTheme({ accent, ... })` to author your own |
+| `@aflekkas/vibecli/theme-picker` | `<ThemePicker>` Ink widget for live theme switching — arrow keys, enter, esc |
 | `@aflekkas/vibecli/providers` | Generic `Message`, `ContentBlock`, `ToolDef`, `Provider`, `StreamEvent` types you build against |
 | `@aflekkas/vibecli/providers/adapter` | `AiSdkProvider`, Vercel AI SDK adapter wired for Anthropic prompt caching, adaptive thinking, and OpenAI prompt-cache keys |
 | `@aflekkas/vibecli/agent` | `createAgent(provider, system, opts)` — provider-agnostic stream loop with tool execution, abort handling, tool-result truncation, optional auto-compaction, and lifecycle hooks |
+| `vibecli mcp` (bin subcommand) | Local stdio MCP server that wraps this package's README + `docs/*.md`. Plug into Claude Code so an agent can scaffold a vibecli CLI against the current API. See the **Docs MCP** section above. |
 
 ## 🚀 Usage
 
@@ -179,6 +204,25 @@ const tools = mcpToolsToToolDefs(await client.listTools());
 const text = mcpResultToText(await client.callTool({ name, arguments: input }));
 ```
 
+Render a modal menu over your TUI. The host owns selection state and key handling; `<Picker>` is the visual:
+
+```tsx
+import { Picker, type PickerItem } from "@aflekkas/vibecli/picker";
+
+const items: PickerItem[] = [
+  { key: "a", label: "Restart", description: "Reload the agent" },
+  { key: "b", label: "Exit", description: "Quit the CLI" },
+];
+
+<Picker
+  title="actions"
+  items={items}
+  selected={selected}
+  columns={process.stdout.columns ?? 80}
+  rows={process.stdout.rows ?? 24}
+/>;
+```
+
 Scaffold a small Ink app from the package binary:
 
 ```bash
@@ -231,6 +275,28 @@ const uiConfig = {
 </VibeConfigProvider>;
 ```
 
+### 🎨 Theming
+
+Pick a built-in or define your own. A theme is just a `VibeConfigInput` — pass it to `VibeConfigProvider` and every primitive picks it up.
+
+```tsx
+import { VibeConfigProvider } from "@aflekkas/vibecli/config";
+import { themes, defineTheme } from "@aflekkas/vibecli/themes";
+import { ThemePicker } from "@aflekkas/vibecli/theme-picker";
+
+// Use a built-in: pink (default), ocean, matrix, amber, claude, mono.
+<VibeConfigProvider config={themes.ocean}>{children}</VibeConfigProvider>;
+
+// Define your own — gradient + role colors derive from accent.
+const sunset = defineTheme({ accent: "#ff6b6b", secondary: "#feca57" });
+<VibeConfigProvider config={sunset}>{children}</VibeConfigProvider>;
+
+// Live theme switcher (arrow keys + enter).
+<ThemePicker value={current} onPick={setCurrent} onCancel={close} />;
+```
+
+The `vibecli init` scaffolder prompts for a theme during setup (`--theme <name>` skips the prompt) and ships a `/theme` command in the generated app that opens `<ThemePicker>` for live switching.
+
 Direct props still win for one-off overrides. `GradientText` accepts `theme`, `gradient`, or `colorAt`; `TextInput` accepts `placeholder`, `placeholderColor`, and `options`; `highlight(markdown, { config, theme })` accepts the same config object plus ANSI token overrides.
 
 More docs:
@@ -250,6 +316,8 @@ Promotion to vibecli later is cheap. Demotion after publish is an API break. Whe
 bun install
 bun run typecheck
 ```
+
+This repo is itself built with a small claude-code-native stack — agents, skills, and slash commands live under [`.claude/`](.claude/) and `CLAUDE.md` orchestrates them. Open the directory if you're curious how the package is iterated on day to day.
 
 No test suite yet. Verify changes by type-checking here, then shipping a real npm version and exercising rawdog (the canonical consumer):
 

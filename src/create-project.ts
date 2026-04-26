@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { themeNames, type ThemeName } from "./themes.ts";
 
 export type PackageManager = "bun" | "npm";
 
@@ -12,6 +13,7 @@ export type CreateProjectOptions = {
   packageManager?: PackageManager;
   vibecliVersion?: string;
   install?: boolean;
+  theme?: ThemeName;
 };
 
 export type CreatedFile = {
@@ -26,6 +28,7 @@ export type CreateProjectResult = {
   packageManager: PackageManager;
   vibecliVersion: string;
   installed: boolean;
+  theme: ThemeName;
 };
 
 async function fileExists(path: string): Promise<boolean> {
@@ -108,12 +111,15 @@ function tsconfigJson(packageManager: PackageManager): string {
   )}\n`;
 }
 
-function appSource(): string {
+function appSource(theme: ThemeName): string {
   return `import React, { useEffect, useRef, useState } from "react";
 import { Box, Text, render, useApp } from "ink";
 import { anthropic } from "@ai-sdk/anthropic";
 import { TextInput } from "@aflekkas/vibecli/text-input";
-import { GradientText, createTheme } from "@aflekkas/vibecli/ui";
+import { GradientText } from "@aflekkas/vibecli/ui";
+import { VibeConfigProvider, useVibeConfig } from "@aflekkas/vibecli/config";
+import { themes, type ThemeName } from "@aflekkas/vibecli/themes";
+import { ThemePicker } from "@aflekkas/vibecli/theme-picker";
 import { AiSdkProvider } from "@aflekkas/vibecli/providers/adapter";
 import { createAgent, type Agent } from "@aflekkas/vibecli/agent";
 
@@ -133,18 +139,29 @@ const provider = new AiSdkProvider({
 // Swap at runtime with \`agent.setSystem("...")\`.
 const SYSTEM_PROMPT = "You are a helpful CLI assistant. Be concise.";
 
-const theme = createTheme({
-  colors: { accent: "#38bdf8", placeholder: "#64748b" },
-  gradient: { hueStart: 190, hueSpan: 120, saturation: 0.82, lightness: 0.58 },
-});
+// Initial theme. Built-ins: ${themeNames.join(", ")}.
+// Type \`/theme\` while running to switch live, or define your own with
+// \`defineTheme({ accent: "#hex", ... })\` from "@aflekkas/vibecli/themes".
+const INITIAL_THEME: ThemeName = "${theme}";
 
 type Turn = { role: "user" | "assistant"; text: string };
 
-function App() {
+function Chat({
+  themeName,
+  onPickTheme,
+}: {
+  themeName: ThemeName;
+  onPickTheme: (name: ThemeName) => void;
+}) {
   const { exit } = useApp();
+  const config = useVibeConfig();
+  const accent = config.theme.colors.accent;
+  const muted = config.theme.colors.muted;
+
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [picking, setPicking] = useState(false);
   const agentRef = useRef<Agent | null>(null);
 
   useEffect(() => {
@@ -178,33 +195,58 @@ function App() {
 
   return (
     <Box flexDirection="column" gap={1}>
-      <GradientText text="vibecli" theme={theme} />
-      <Text color={theme.colors.muted}>
-        Set ANTHROPIC_API_KEY in .env, then chat below. Submit empty to exit.
+      <GradientText text="vibecli" />
+      <Text color={muted}>
+        Set ANTHROPIC_API_KEY in .env, then chat. Type \`/theme\` to switch colors. Submit empty to exit.
       </Text>
       {turns.map((t, i) => (
         <Box key={i} flexDirection="column">
-          <Text color={t.role === "user" ? theme.colors.accent : undefined}>
+          <Text color={t.role === "user" ? accent : undefined}>
             {(t.role === "user" ? "you" : "ai") + "> " + t.text}
           </Text>
         </Box>
       ))}
-      <TextInput
-        value={input}
-        onChange={setInput}
-        placeholder={busy ? "thinking..." : "ask anything"}
-        theme={theme}
-        tabText="  "
-        onSubmit={(text) => {
-          if (!text.trim()) {
-            exit();
-            return;
-          }
-          setInput("");
-          void send(text);
-        }}
-      />
+      {picking ? (
+        <ThemePicker
+          value={themeName}
+          onPick={(name) => {
+            onPickTheme(name);
+            setPicking(false);
+          }}
+          onCancel={() => setPicking(false)}
+        />
+      ) : (
+        <TextInput
+          value={input}
+          onChange={setInput}
+          placeholder={busy ? "thinking..." : "ask anything (try /theme)"}
+          tabText="  "
+          onSubmit={(text) => {
+            const trimmed = text.trim();
+            if (!trimmed) {
+              exit();
+              return;
+            }
+            if (trimmed === "/theme") {
+              setInput("");
+              setPicking(true);
+              return;
+            }
+            setInput("");
+            void send(trimmed);
+          }}
+        />
+      )}
     </Box>
+  );
+}
+
+function App() {
+  const [themeName, setThemeName] = useState<ThemeName>(INITIAL_THEME);
+  return (
+    <VibeConfigProvider config={themes[themeName]}>
+      <Chat themeName={themeName} onPickTheme={setThemeName} />
+    </VibeConfigProvider>
   );
 }
 
@@ -322,13 +364,14 @@ export async function createProjectSkeleton(opts: CreateProjectOptions): Promise
     opts.vibecliVersion ?? (detectedVersion ? `^${detectedVersion}` : "latest");
   const force = opts.force ?? false;
   const install = opts.install ?? true;
+  const theme: ThemeName = opts.theme ?? themeNames[0]!;
 
   await mkdir(dir, { recursive: true });
 
   const files = [
     await writeProjectFile(dir, "package.json", packageJson(name, { packageManager, vibecliVersion }), force),
     await writeProjectFile(dir, "tsconfig.json", tsconfigJson(packageManager), force),
-    await writeProjectFile(dir, "src/index.tsx", appSource(), force),
+    await writeProjectFile(dir, "src/index.tsx", appSource(theme), force),
     await writeProjectFile(dir, ".env.example", envExample(), force),
     await writeProjectFile(dir, "README.md", readme(name, packageManager), force),
     await writeProjectFile(dir, ".gitignore", "node_modules\n.DS_Store\n.env\n", force),
@@ -340,5 +383,5 @@ export async function createProjectSkeleton(opts: CreateProjectOptions): Promise
     installed = true;
   }
 
-  return { dir, name, files, packageManager, vibecliVersion, installed };
+  return { dir, name, files, packageManager, vibecliVersion, installed, theme };
 }
