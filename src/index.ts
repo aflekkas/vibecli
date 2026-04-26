@@ -143,6 +143,8 @@ export type {
   ScenarioResult,
   ScenarioStep,
 } from "./scenarios.ts";
+export { defineModel, ModelPicker } from "./models.tsx";
+export type { ModelEntry, ModelPickerProps } from "./models.tsx";
 export { MessageList, useAgentStream } from "./chat.tsx";
 export type {
   MessageListProps,

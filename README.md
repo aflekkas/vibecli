@@ -91,6 +91,7 @@ Use subpath imports for focused code. The root package also re-exports the curre
 | `@aflekkas/vibecli/agent` | `createAgent(provider, system, opts)` — provider-agnostic stream loop with tool execution, abort handling, tool-result truncation, optional auto-compaction, and lifecycle hooks |
 | `@aflekkas/vibecli/scenarios` | `runScenario(agent, steps, opts?)` — scripted scenario runner for agent CLIs, drives a step list, asserts on assistant text, returns a structured result |
 | `@aflekkas/vibecli/chat` | `useAgentStream(agent, opts?)` React hook (turns reducer, streaming text accumulator, busy + AbortController, `onEvent` for tool/usage/abort/compaction surfacing, `onBeforeSend` for checkpoint snapshotting) and `<MessageList>` Ink component that renders turns with per-role styling from `useVibeConfig().messages.roles` |
+| `@aflekkas/vibecli/models` | `defineModel({ id, providerName, build })` registry helper plus `<ModelPicker models value onPick onCancel>` Ink widget — same modal shape as `<ThemePicker>` but for the multi-provider model router |
 | `vibecli mcp` (bin subcommand) | Local stdio MCP server that wraps this package's README + `docs/*.md`. Plug into Claude Code so an agent can scaffold a vibecli CLI against the current API. See the **Docs MCP** section above. |
 
 ## 📚 Docs

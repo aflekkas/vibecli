@@ -45,7 +45,8 @@
     "./frontmatter": "./src/frontmatter.ts",
     "./markdown-dir": "./src/markdown-dir.ts",
     "./scenarios": "./src/scenarios.ts",
-    "./chat": "./src/chat.tsx"
+    "./chat": "./src/chat.tsx",
+    "./models": "./src/models.tsx"
   },
   "files": [
     "bin",
