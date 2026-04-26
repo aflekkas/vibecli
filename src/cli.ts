@@ -8,17 +8,19 @@ type CliOptions = {
   force: boolean;
   packageManager: PackageManager;
   vibecliVersion?: string;
+  install: boolean;
 };
 
 function help(): string {
   return `vibecli
 
 Usage:
-  vibecli init [dir] [--name <name>] [--pm bun|npm] [--vibecli <version>] [--force]
+  vibecli init [dir] [--name <name>] [--pm bun|npm] [--vibecli <version>] [--no-install] [--force]
 
 Examples:
   vibecli init my-cli
   vibecli init . --name my-cli --pm bun
+  vibecli init my-cli --no-install
 `;
 }
 
@@ -31,6 +33,7 @@ function parseArgs(argv: string[]): CliOptions | "help" {
     dir: "vibecli-app",
     force: false,
     packageManager: "bun",
+    install: true,
   };
 
   let dirSet = false;
@@ -39,6 +42,10 @@ function parseArgs(argv: string[]): CliOptions | "help" {
     if (arg === "--help" || arg === "-h") return "help";
     if (arg === "--force") {
       opts.force = true;
+      continue;
+    }
+    if (arg === "--no-install") {
+      opts.install = false;
       continue;
     }
     if (arg === "--name") {
@@ -81,15 +88,19 @@ async function main() {
     force: parsed.force,
     packageManager: parsed.packageManager,
     vibecliVersion: parsed.vibecliVersion,
+    install: parsed.install,
   });
 
   process.stdout.write(`Created ${result.name} in ${result.dir}\n`);
   for (const file of result.files) {
     process.stdout.write(`  ${file.action} ${file.path}\n`);
   }
-  const install = result.packageManager === "bun" ? "bun install" : "npm install";
   const dev = result.packageManager === "bun" ? "bun run dev" : "npm run dev";
-  process.stdout.write(`\nNext:\n  cd ${result.dir}\n  ${install}\n  ${dev}\n`);
+  process.stdout.write(`\nNext:\n  cd ${result.dir}\n  cp .env.example .env  # paste ANTHROPIC_API_KEY\n  ${dev}\n`);
+  if (!result.installed) {
+    const install = result.packageManager === "bun" ? "bun install" : "npm install";
+    process.stdout.write(`  (run \`${install}\` first — skipped via --no-install)\n`);
+  }
 }
 
 main().catch((err: unknown) => {
