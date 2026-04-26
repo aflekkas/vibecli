@@ -13,6 +13,16 @@ const IMAGE_EXTS: Record<string, string> = {
   ".webp": "image/webp",
 };
 
+export type TempImageOptions = {
+  dir?: string;
+  prefix?: string;
+};
+
+function tempImagePath(ext: string, opts: TempImageOptions = {}): string {
+  const prefix = (opts.prefix ?? "vibecli").replace(/[^a-zA-Z0-9_-]/g, "-") || "vibecli";
+  return join(opts.dir ?? tmpdir(), `${prefix}-${randomBytes(6).toString("hex")}${ext}`);
+}
+
 export function mediaTypeForPath(path: string): string | null {
   const lower = path.toLowerCase();
   for (const [ext, mt] of Object.entries(IMAGE_EXTS)) {
@@ -30,9 +40,9 @@ export async function readImageFile(path: string): Promise<{ mediaType: string; 
 
 // Grab a PNG from the macOS clipboard via osascript. Returns null if there's
 // no image on the clipboard (or the platform isn't macOS).
-export async function readClipboardImage(): Promise<{ mediaType: string; data: string } | null> {
+export async function readClipboardImage(opts: TempImageOptions = {}): Promise<{ mediaType: string; data: string } | null> {
   if (process.platform !== "darwin") return null;
-  const tmp = join(tmpdir(), `rawdog-paste-${randomBytes(6).toString("hex")}.png`);
+  const tmp = tempImagePath(".png", { prefix: "vibecli-paste", ...opts });
   const script = `
     try
       set imgData to the clipboard as «class PNGf»
@@ -109,8 +119,8 @@ export function extractImagePaths(text: string): { text: string; paths: string[]
   return { text: remaining, paths };
 }
 
-export async function writeTempImage(data: Buffer, ext: string): Promise<string> {
-  const tmp = join(tmpdir(), `rawdog-${randomBytes(6).toString("hex")}${ext}`);
+export async function writeTempImage(data: Buffer, ext: string, opts: TempImageOptions = {}): Promise<string> {
+  const tmp = tempImagePath(ext, opts);
   await writeFile(tmp, data);
   return tmp;
 }

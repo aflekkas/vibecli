@@ -9,6 +9,9 @@
     "type": "git",
     "url": "git+https://github.com/aflekkas/vibecli.git"
   },
+  "bin": {
+    "vibecli": "./src/cli.ts"
+  },
   "keywords": [
     "ink",
     "tui",
@@ -24,16 +27,27 @@
     "./clipboard": "./src/clipboard.ts",
     "./highlight": "./src/highlight.ts",
     "./ui": "./src/ui.tsx",
+    "./config": "./src/ui-config.tsx",
     "./retry": "./src/retry.ts",
+    "./create-project": "./src/create-project.ts",
+    "./checkpoints": "./src/checkpoints.ts",
+    "./lsp": "./src/lsp.ts",
+    "./mcp": "./src/mcp.ts",
+    "./repo-map": "./src/repo-map.ts",
+    "./status-line": "./src/status-line.ts",
     "./providers": "./src/providers/types.ts",
     "./providers/adapter": "./src/providers/adapter.ts"
   },
   "files": [
     "src",
+    "docs",
     "README.md"
   ],
   "scripts": {
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "ship": "bun run typecheck && npm version patch && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun update @aflekkas/vibecli && bun run typecheck)",
+    "ship:minor": "bun run typecheck && npm version minor && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun update @aflekkas/vibecli && bun run typecheck)",
+    "ship:major": "bun run typecheck && npm version major && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun update @aflekkas/vibecli && bun run typecheck)"
   },
   "peerDependencies": {
     "ai": "^6.0.168",

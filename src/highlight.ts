@@ -1,14 +1,26 @@
 // ANSI syntax highlighter for markdown fenced code blocks.
 // Regex-based, zero deps. Only touches content inside triple-backtick fences.
 
-const RESET = "\x1b[0m";
-const DIM = "\x1b[2m";
-const UNDIM = "\x1b[22m";
-const MAGENTA = "\x1b[35m";
-const GREEN = "\x1b[32m";
-const YELLOW = "\x1b[33m";
-const COMMENT_ON = "\x1b[2;37m";
-const COMMENT_OFF = "\x1b[22;39m";
+import { createVibeConfig, defaultHighlightTheme } from "./ui-config.tsx";
+import type { VibeConfigInput } from "./ui-config.tsx";
+
+export type HighlightTheme = {
+  reset: string;
+  dim: string;
+  undim: string;
+  keyword: string;
+  string: string;
+  number: string;
+  comment: string;
+  commentOff: string;
+};
+
+export type HighlightOptions = {
+  config?: VibeConfigInput;
+  theme?: Partial<HighlightTheme>;
+};
+
+export { defaultHighlightTheme };
 
 type LangKey =
   | "ts"
@@ -68,10 +80,10 @@ function makePlaceholder(kind: string, idx: number): string {
   return `\x00${kind}${idx}\x00`;
 }
 
-function highlightBlock(code: string, lang: LangKey): string {
+function highlightBlock(code: string, lang: LangKey, theme: HighlightTheme): string {
   if (lang === "unknown") {
     // Uniform dim — escape any existing ESC sequences are unlikely in source.
-    return DIM + code + UNDIM;
+    return theme.dim + code + theme.undim;
   }
 
   const masks: Mask[] = [];
@@ -91,7 +103,7 @@ function highlightBlock(code: string, lang: LangKey): string {
       const ph = makePlaceholder("C", masks.length);
       masks.push({
         placeholder: ph,
-        replacement: COMMENT_ON + m + COMMENT_OFF,
+        replacement: theme.comment + m + theme.commentOff,
       });
       return ph;
     });
@@ -118,7 +130,7 @@ function highlightBlock(code: string, lang: LangKey): string {
   for (const re of stringPatterns) {
     working = working.replace(re, (m) => {
       const ph = makePlaceholder("S", masks.length);
-      masks.push({ placeholder: ph, replacement: GREEN + m + RESET });
+      masks.push({ placeholder: ph, replacement: theme.string + m + theme.reset });
       return ph;
     });
   }
@@ -130,12 +142,12 @@ function highlightBlock(code: string, lang: LangKey): string {
       `\\b(${kws.map(escapeRegex).join("|")})\\b`,
       "g"
     );
-    working = working.replace(kwRe, (m) => MAGENTA + m + RESET);
+    working = working.replace(kwRe, (m) => theme.keyword + m + theme.reset);
   }
 
   // 4. Numbers.
   const numRe = /\b(?:0x[0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b/g;
-  working = working.replace(numRe, (m) => YELLOW + m + RESET);
+  working = working.replace(numRe, (m) => theme.number + m + theme.reset);
 
   // 5. Unmask.
   for (const m of masks) {
@@ -145,7 +157,9 @@ function highlightBlock(code: string, lang: LangKey): string {
   return working;
 }
 
-export function highlight(text: string): string {
+export function highlight(text: string, opts: HighlightOptions = {}): string {
+  const vibeConfig = createVibeConfig(opts.config);
+  const theme = { ...vibeConfig.highlight.theme, ...opts.theme };
   const lines = text.split("\n");
   const out: string[] = [];
   let i = 0;
@@ -169,12 +183,12 @@ export function highlight(text: string): string {
       }
       const lang = normalizeLang(openMatch[2] || "");
       const body = lines.slice(i + 1, closeIdx).join("\n");
-      const colored = highlightBlock(body, lang);
-      out.push(DIM + line + UNDIM);
+      const colored = highlightBlock(body, lang, theme);
+      out.push(theme.dim + line + theme.undim);
       if (body.length > 0 || closeIdx > i + 1) {
         out.push(colored);
       }
-      out.push(DIM + lines[closeIdx]! + UNDIM);
+      out.push(theme.dim + lines[closeIdx]! + theme.undim);
       i = closeIdx + 1;
     } else {
       out.push(line);

@@ -1,5 +1,45 @@
 import React from "react";
 import { Box, Text } from "ink";
+import {
+  createTheme,
+  defaultTheme,
+  useVibeConfig,
+  type GradientConfig,
+  type VibeConfigInput,
+  type VibeTheme,
+  type VibeThemeInput,
+} from "./ui-config.tsx";
+
+export {
+  createTheme,
+  createVibeConfig,
+  defaultHighlightTheme,
+  defaultTheme,
+  defaultVibeConfig,
+  formatLoadingStatus,
+  loadingFrameAt,
+  loadingLabelAt,
+  mergeTextInputOptions,
+  useVibeConfig,
+  VibeConfigProvider,
+} from "./ui-config.tsx";
+export type {
+  LoadingConfig,
+  MessageConfig,
+  MessageRole,
+  MessageStyle,
+  TextInputConfig,
+  TextInputKeyBinding,
+  TextInputOptions,
+  TextInputShortcut,
+  TextInputSpecialKey,
+  VibeConfig,
+  VibeConfigInput,
+  VibeConfigProviderProps,
+  GradientConfig,
+  VibeTheme,
+  VibeThemeInput,
+} from "./ui-config.tsx";
 
 export function rgbToHex(r: number, g: number, b: number): string {
   return `#${[r, g, b].map((p) => p.toString(16).padStart(2, "0")).join("")}`;
@@ -35,12 +75,24 @@ export function rainbowColorAt(ratio: number, phase: number): string {
   return rgbToHex(r, g, b);
 }
 
-// Pink gradient across characters, slowly drifting with phase.
-// Hue stays in the violet-magenta → rose band (295..355).
-export function pinkGradientAt(ratio: number, phase: number = 0): string {
-  const hue = 295 + ((phase * 2 + ratio * 30) % 60);
-  const { r, g, b } = hslToRgb(hue, 0.9, 0.68);
+export function gradientColorAt(
+  ratio: number,
+  phase: number = 0,
+  gradient: GradientConfig = defaultTheme.gradient,
+): string {
+  const hue =
+    gradient.hueStart +
+    (((gradient.phaseSpeed ?? 0) * phase + ratio * gradient.hueSpan) % 360);
+  const { r, g, b } = hslToRgb(
+    hue,
+    gradient.saturation ?? defaultTheme.gradient.saturation!,
+    gradient.lightness ?? defaultTheme.gradient.lightness!,
+  );
   return rgbToHex(r, g, b);
+}
+
+export function pinkGradientAt(ratio: number, phase: number = 0): string {
+  return gradientColorAt(ratio, phase, defaultTheme.gradient);
 }
 
 export function wrapText(text: string, width: number): string[] {
@@ -67,14 +119,34 @@ export function wrapText(text: string, width: number): string[] {
   return out;
 }
 
-export function GradientText({ text, phase = 0 }: { text: string; phase?: number }) {
+export type GradientTextProps = {
+  text: string;
+  phase?: number;
+  config?: VibeConfigInput;
+  theme?: VibeThemeInput;
+  gradient?: Partial<GradientConfig>;
+  colorAt?: (opts: { char: string; index: number; ratio: number; phase: number; theme: VibeTheme }) => string;
+};
+
+export function GradientText({ text, phase = 0, config, theme, gradient, colorAt }: GradientTextProps) {
+  const vibeConfig = useVibeConfig(config);
+  const resolvedTheme = createTheme({
+    ...theme,
+    gradient: {
+      ...theme?.gradient,
+      ...gradient,
+    },
+  }, vibeConfig.theme);
   const chars = text.split("");
   return (
     <Box>
       {chars.map((char, index) => {
         const ratio = chars.length <= 1 ? 0 : index / (chars.length - 1);
+        const color = colorAt
+          ? colorAt({ char, index, ratio, phase, theme: resolvedTheme })
+          : gradientColorAt(ratio, phase, resolvedTheme.gradient);
         return (
-          <Text key={`${char}-${index}`} color={pinkGradientAt(ratio, phase)}>
+          <Text key={`${char}-${index}`} color={color}>
             {char}
           </Text>
         );
