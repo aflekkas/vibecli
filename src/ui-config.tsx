@@ -1,5 +1,10 @@
 import React from "react";
-import type { HighlightTheme } from "./highlight.ts";
+import { defaultHighlightTheme, type HighlightTheme } from "./highlight.ts";
+
+// Re-export `defaultHighlightTheme` for back-compat: `src/ui.tsx` still
+// re-exports this name from `./ui-config.tsx`, and `@aflekkas/vibecli/ui`
+// is part of the public surface.
+export { defaultHighlightTheme };
 
 export type GradientConfig = {
   hueStart: number;
@@ -129,17 +134,6 @@ export const defaultTheme: VibeTheme = {
     saturation: 0.9,
     lightness: 0.68,
   },
-};
-
-export const defaultHighlightTheme: HighlightTheme = {
-  reset: "\x1b[0m",
-  dim: "\x1b[2m",
-  undim: "\x1b[22m",
-  keyword: "\x1b[35m",
-  string: "\x1b[32m",
-  number: "\x1b[33m",
-  comment: "\x1b[2;37m",
-  commentOff: "\x1b[22;39m",
 };
 
 export const defaultVibeConfig: VibeConfig = {

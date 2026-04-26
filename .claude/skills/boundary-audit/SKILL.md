@@ -5,7 +5,7 @@ description: Checklist for evaluating whether code in `src/` stays generic and c
 
 # Boundary audit
 
-`@aflekkas/vibecli` ships only generic primitives. Anything specific to a single consumer belongs in that consumer (the in-tree `examples/playground/` or any external app scaffolded from a template). The boundary is a contract with future consumers — breaking it silently rots the package.
+`@aflekkas/vibecli` ships only generic primitives. Anything specific to a single consumer belongs in that consumer (the in-tree `templates/playground/` or any external app scaffolded from a template). The boundary is a contract with future consumers — breaking it silently rots the package.
 
 Use this checklist before committing a change to `src/`. The `boundary-reviewer` agent runs the same checklist on diffs.
 
@@ -15,7 +15,7 @@ Use this checklist before committing a change to `src/`. The `boundary-reviewer`
 - **Runtime artifact paths.** `.<consumer>/` directories, `~/.<consumer>/` config locations, hardcoded paths to consumer state.
 - **Specific tool names.** `"bash"`, `"read"`, `"spawn_agent"`, `"memory"`, `"slash_command"` etc. as identifiers, function names, or string constants.
 - **Slash commands.** Any `/foo` shape inside `src/`.
-- **Consumer imports.** `../examples/`, `../../examples/playground/`, anything pulling consumer wiring back into `src/`. The playground depends on `src/`, never the reverse.
+- **Consumer imports.** `../../templates/playground/`, anything pulling consumer wiring back into `src/`. The playground depends on `src/`, never the reverse.
 - **Hidden assumptions.** Hardcoded file paths, env vars with consumer-specific names, default config values keyed to one consumer's setup.
 - **Half-finished features for a single use case.** If only one consumer needs it, it should live there.
 
@@ -48,8 +48,8 @@ Output one of three:
 - Provider-name strings inside `src/providers/adapter/`.
 - README/docs examples showing consumer wiring — those aren't `src/`.
 - The `vibecli init` scaffolder writing template files — it's a scaffolder, generating consumer code is its job.
-- `examples/playground/` itself — the playground is the consumer. Demo wiring belongs there, and the boundary check does **not** apply to it.
+- `templates/playground/` itself — the playground is the consumer. Demo wiring belongs there, and the boundary check does **not** apply to it.
 
 ## Promotion is cheap, demotion is an API break
 
-When in doubt, the feature does not belong in `src/` yet. Build it in `examples/playground/` first. Promote later via the `promote` skill. Pulling something out of `package.json` `exports` after publish breaks consumers; pushing it in earlier just costs a release.
+When in doubt, the feature does not belong in `src/` yet. Build it in `templates/playground/` first. Promote later via the `promote` skill. Pulling something out of `package.json` `exports` after publish breaks consumers; pushing it in earlier just costs a release.

@@ -1,11 +1,11 @@
 ---
 name: extractables
-description: Scan `examples/playground/` for inline wiring that looks promotable into `src/` but hasn't been promoted yet. Triggers on `/extractables`, "what could we lift from the playground", "playground gap scan", "promotion candidates", "what's promotable".
+description: Scan `templates/playground/` for inline wiring that looks promotable into `src/` but hasn't been promoted yet. Triggers on `/extractables`, "what could we lift from the playground", "playground gap scan", "promotion candidates", "what's promotable".
 ---
 
 # Extractables
 
-Read-only gap scan. Surveys `examples/playground/src/` (and any other in-tree consumer) for inline implementations that look generic enough to lift into `src/`, and reports candidates ranked by liftability. Pairs with `/promote` (which does the actual three-step promotion).
+Read-only gap scan. Surveys `templates/playground/src/` (and any other in-tree consumer) for inline implementations that look generic enough to lift into `src/`, and reports candidates ranked by liftability. Pairs with `/promote` (which does the actual three-step promotion).
 
 This is the **inward** counterpart to `/parity` (which surveys *external* peer Ink + AI-SDK CLIs for ideas). Use this when the question is "what do we already have inline in the playground that vibecli should expose as a primitive?".
 
@@ -22,11 +22,11 @@ Strictly read-only. No edits, no commits. Output is a ranked list the user picks
 ### 1. Inventory playground modules
 
 ```bash
-ls -la examples/playground/src/
-wc -l examples/playground/src/*.{ts,tsx} 2>/dev/null
+ls -la templates/playground/src/
+wc -l templates/playground/src/*.{ts,tsx} 2>/dev/null
 ```
 
-For each non-trivial module or self-contained section of `examples/playground/src/index.tsx`, capture: location, LoC, exports, what it does in one line.
+For each non-trivial module or self-contained section of `templates/playground/src/index.tsx`, capture: location, LoC, exports, what it does in one line.
 
 Skip:
 - Top-level `App` wiring — by design, the playground composes; that's not a lift candidate.

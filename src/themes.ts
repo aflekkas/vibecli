@@ -30,6 +30,13 @@ function hexToHue(input: string): number | null {
   return h < 0 ? h + 360 : h;
 }
 
+/**
+ * Builds a `VibeConfigInput` from a minimal accent-focused spec.
+ *
+ * Derives gradient hue from the hex `accent` value (falls back to monochrome
+ * when `accent` is not a hex color). Per-role overrides in `input.roles` are
+ * merged on top of the computed defaults, not replaced wholesale.
+ */
 export function defineTheme(input: DefineThemeInput): VibeConfigInput {
   const accent = input.accent;
   const derivedHue = hexToHue(accent);

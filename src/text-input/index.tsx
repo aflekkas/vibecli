@@ -1,119 +1,15 @@
 import React from "react";
 import { Box, Text, useInput, useStdout } from "ink";
-import type { Key } from "ink";
 import { createTheme, mergeTextInputOptions, useVibeConfig } from "../ui-config.tsx";
 import { nextCharLen, prevCharLen, wordEnd, wordStart } from "./cursor.ts";
 import { findPasteEnd, PASTE_START } from "./paste.ts";
-import type { TextInputKeyBinding, TextInputProps, TextInputShortcut } from "./types.ts";
+import { modifiedReturnEvent, textInputKeyEvent, type TextInputKeyEvent } from "./keys.ts";
+import { matchesAny } from "./bindings.ts";
+import type { TextInputProps, TextInputShortcut } from "./types.ts";
 
 const DEFAULT_SUBMIT_ON: TextInputShortcut[] = ["return"];
 const DEFAULT_NEWLINE_ON: TextInputShortcut[] = ["shift+return", "meta+return", "ctrl+return"];
 const DEFAULT_HISTORY_PREV_ON: TextInputShortcut[] = ["up", "meta+up"];
-
-type TextInputKeyEvent = {
-  input: string;
-  name: string | null;
-  ctrl: boolean;
-  meta: boolean;
-  shift: boolean;
-};
-
-function normalizeKeyName(key: string): string {
-  const normalized = key.trim().toLowerCase();
-  if (normalized === "enter") return "return";
-  if (normalized === "uparrow") return "up";
-  if (normalized === "downarrow") return "down";
-  if (normalized === "leftarrow") return "left";
-  if (normalized === "rightarrow") return "right";
-  if (normalized === "esc") return "escape";
-  if (normalized === "del") return "delete";
-  return normalized;
-}
-
-function keyNameFor(key: Key): string | null {
-  if (key.return) return "return";
-  if (key.tab) return "tab";
-  if (key.escape) return "escape";
-  if (key.upArrow) return "up";
-  if (key.downArrow) return "down";
-  if (key.leftArrow) return "left";
-  if (key.rightArrow) return "right";
-  if (key.backspace) return "backspace";
-  if (key.delete) return "delete";
-  return null;
-}
-
-function modifiedReturnEvent(input: string): TextInputKeyEvent | null {
-  const match = /^\[27;(\d+);13~$/.exec(input);
-  if (!match) return null;
-  const mod = Number(match[1]);
-  return {
-    input,
-    name: "return",
-    shift: mod === 2 || mod === 4 || mod === 6 || mod === 8,
-    meta: mod === 3 || mod === 4 || mod === 7 || mod === 8,
-    ctrl: mod === 5 || mod === 6 || mod === 7 || mod === 8,
-  };
-}
-
-function textInputKeyEvent(input: string, key: Key): TextInputKeyEvent {
-  return {
-    input,
-    name: keyNameFor(key),
-    ctrl: key.ctrl,
-    meta: key.meta,
-    shift: key.shift,
-  };
-}
-
-function modifiersMatch(
-  event: TextInputKeyEvent,
-  expected: Pick<TextInputKeyBinding, "ctrl" | "meta" | "shift">,
-): boolean {
-  const hasExpectedModifier = expected.ctrl === true || expected.meta === true || expected.shift === true;
-  if (!hasExpectedModifier) return !event.ctrl && !event.meta && !event.shift;
-  if (expected.ctrl === true && !event.ctrl) return false;
-  if (expected.meta === true && !event.meta) return false;
-  if (expected.shift === true && !event.shift) return false;
-  if (expected.ctrl === false && event.ctrl) return false;
-  if (expected.meta === false && event.meta) return false;
-  if (expected.shift === false && event.shift) return false;
-  return true;
-}
-
-function bindingMatches(event: TextInputKeyEvent, binding: TextInputShortcut): boolean {
-  if (typeof binding === "string") {
-    const parts = binding.split("+").map((part) => part.trim()).filter(Boolean);
-    const key = normalizeKeyName(parts.pop() ?? "");
-    const modifiers = new Set(parts.map((part) => normalizeKeyName(part)));
-    const parsed: TextInputKeyBinding = { key };
-    if (modifiers.has("ctrl") || modifiers.has("control")) parsed.ctrl = true;
-    if (
-      modifiers.has("meta") ||
-      modifiers.has("cmd") ||
-      modifiers.has("command") ||
-      modifiers.has("alt") ||
-      modifiers.has("option")
-    ) {
-      parsed.meta = true;
-    }
-    if (modifiers.has("shift")) parsed.shift = true;
-    return bindingMatches(event, parsed);
-  }
-
-  const key = binding.key ? normalizeKeyName(binding.key) : null;
-  const input = binding.input;
-  const keyMatches =
-    key === null ||
-    event.name === key ||
-    (key.length === 1 && event.input.toLowerCase() === key);
-  const inputMatches = input === undefined || event.input === input;
-  return keyMatches && inputMatches && modifiersMatch(event, binding);
-}
-
-function matchesAny(event: TextInputKeyEvent, bindings: TextInputShortcut[]): boolean {
-  return bindings.some((binding) => bindingMatches(event, binding));
-}
 
 function normalizePastedText(text: string, normalizePasteNewlines: boolean): string {
   return normalizePasteNewlines ? text.replace(/\r\n?/g, "\n") : text;

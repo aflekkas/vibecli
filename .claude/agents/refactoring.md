@@ -20,7 +20,7 @@ You restructure `src/` while holding two things constant: the public API and the
 
 - Adding features. That's a different agent.
 - Changing the public API. That's a breaking-change conversation, not a refactor.
-- Editing `examples/playground/` to move things into `src/`. That's the `promote` skill, not a refactor.
+- Editing `templates/playground/` to move things into `src/`. That's the `promote` skill, not a refactor.
 
 ## Routine
 

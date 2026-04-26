@@ -31,6 +31,11 @@ export function createLineIndex(text: string): number[] {
   return offsets;
 }
 
+/**
+ * Converts a character offset to an LSP `{line, character}` position.
+ * Out-of-range offsets are clamped to the last valid position.
+ * Pass a pre-built `lineIndex` when calling repeatedly over the same text.
+ */
 export function positionAt(text: string, offset: number, lineIndex = createLineIndex(text)): LspPosition {
   const bounded = Math.max(0, Math.min(offset, text.length));
   let low = 0;
@@ -49,6 +54,10 @@ export function positionAt(text: string, offset: number, lineIndex = createLineI
   return { line: lastLine, character: bounded - lineIndex[lastLine]! };
 }
 
+/**
+ * Converts an LSP `{line, character}` position back to a character offset.
+ * Out-of-range positions are clamped to the last valid offset on the line.
+ */
 export function offsetAt(text: string, position: LspPosition, lineIndex = createLineIndex(text)): number {
   const line = Math.max(0, Math.min(position.line, lineIndex.length - 1));
   const lineStart = lineIndex[line]!;

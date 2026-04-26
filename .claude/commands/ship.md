@@ -14,7 +14,7 @@ Run sequentially. Stop and surface on any failure — never bypass.
 1. **Survey.** `git status`, `git diff`, `git diff --cached`. Identify:
    - new files in `src/` that may need a `package.json` `exports` subpath
    - any modified public API surface
-   - new public exports that should be wired into `examples/playground/` and `templates/playground/`
+   - new public exports that should be wired into `templates/playground/`
    - anything outside `src/` that should be excluded from a release commit (stale CLAUDE.md edits, scratch files, etc.)
 
 2. **Exports + README parity.** If any new `src/*.ts`/`src/*.tsx` module is missing from `package.json` `exports`, or any export was renamed/removed, delegate to the `documentation` agent. It must:
@@ -23,9 +23,9 @@ Run sequentially. Stop and surface on any failure — never bypass.
    - add a usage example using the scoped name `@aflekkas/vibecli/<subpath>`
    Skip this step only if the diff is purely internal (no new public surface).
 
-3. **Playground parity.** If the change adds a public export reachable from the agent loop, confirm `examples/playground/src/index.tsx` exercises it and at least one scenario in `examples/playground/scenarios/` covers it. If not, delegate to `testing` to wire and add a scenario.
+3. **Playground parity.** If the change adds a public export reachable from the agent loop, confirm `templates/playground/src/index.tsx` exercises it and at least one scenario in `templates/playground/scenarios/` covers it. If not, delegate to `testing` to wire and add a scenario.
 
-4. **Boundary check.** Delegate to `boundary-reviewer` on the unstaged + staged diff. Hard fail on hardcoded provider names outside `src/providers/adapter/`, runtime artifact paths, consumer tool names, or imports from any consumer (including `examples/playground/` reaching back into `src/`). If it flags a leak, hand to `refactoring` before continuing — do not commit through it.
+4. **Boundary check.** Delegate to `boundary-reviewer` on the unstaged + staged diff. Hard fail on hardcoded provider names outside `src/providers/adapter/`, runtime artifact paths, consumer tool names, or imports from any consumer (including `templates/playground/` reaching back into `src/`). If it flags a leak, hand to `refactoring` before continuing — do not commit through it.
 
 5. **Typecheck.** `bun run typecheck`. Fail fast.
 

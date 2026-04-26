@@ -20,6 +20,14 @@ export function truncateStatusLine(text: string, width: number): string {
   return text.slice(0, width - 3) + "...";
 }
 
+/**
+ * Spawns `command` via the login shell, writes `payload` as JSON to stdin,
+ * and resolves with the first non-empty stdout line.
+ *
+ * Hard-kills the process after `timeoutMs` (default 300 ms) and resolves
+ * with an empty string. Stdout is capped at `maxOutputBytes` (default 4096).
+ * Stderr is ignored.
+ */
 export function runStatusLineCommand(
   command: string,
   payload: StatusLinePayload,

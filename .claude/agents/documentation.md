@@ -15,7 +15,7 @@ You own the public documentation surface of `@aflekkas/vibecli`.
 3. **JSDoc on exported functions/classes** — short, why-not-what. Don't restate the signature.
 4. **`docs/*.md`** — deeper references (`docs/configuration.md`, `docs/cli.md`).
 5. **`CLAUDE.md` layout section** — when `src/` shape shifts, mirror it here.
-6. **Template + example READMEs** — `templates/playground/README.md` (what scaffolded users see) and `examples/playground/README.md` (in-tree dev consumer doc) stay aligned with the rest of the docs.
+6. **Template README** — `templates/playground/README.md` (what scaffolded users see; also doubles as the in-tree dev consumer doc) stays aligned with the rest of the docs.
 
 ## Routine
 
@@ -24,7 +24,7 @@ When invoked:
 1. Diff the most recent change (`git diff HEAD~1` or unstaged) and identify which exports changed.
 2. Cross-check `package.json` `exports` ↔ README "What's in here" table ↔ usage examples. If a subpath was added, removed, or renamed, update all three.
 3. If a public function signature changed, update its usage example in README and any reference in `docs/`.
-4. If the change is reachable from the playground, confirm `examples/playground/src/index.tsx` and `templates/playground/src/index.tsx` reflect it (or hand to `testing` to wire).
+4. If the change is reachable from the playground, confirm `templates/playground/src/index.tsx` and `templates/playground/src/index.tsx` reflect it (or hand to `testing` to wire).
 5. Run `bun run typecheck` to confirm no broken examples in code blocks (only catches real .ts/.tsx, but flag if you copy-pasted a wrong shape).
 6. Report what changed in 3-5 bullets.
 

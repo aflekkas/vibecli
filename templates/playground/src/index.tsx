@@ -9,6 +9,7 @@ import { ThemePicker } from "@aflekkas/vibecli/theme-picker";
 import { AiSdkProvider } from "@aflekkas/vibecli/providers/adapter";
 import { createAgent, type Agent } from "@aflekkas/vibecli/agent";
 import { readClipboardImage } from "@aflekkas/vibecli/clipboard";
+import { runScenario, type ScenarioStep } from "@aflekkas/vibecli/scenarios";
 import type { ContentBlock } from "@aflekkas/vibecli/providers";
 import { readFile } from "node:fs/promises";
 
@@ -28,49 +29,20 @@ const provider = new AiSdkProvider({
 // Swap at runtime with `agent.setSystem("...")`.
 const SYSTEM_PROMPT = "You are a helpful CLI assistant. Be concise.";
 
-// Initial theme. Built-ins: __THEME_NAMES__.
+// Initial theme. Built-ins: pink, ocean, matrix, amber, claude, mono.
 // Type `/theme` while running to switch live, or define your own with
 // `defineTheme({ accent: "#hex", ... })` from "@aflekkas/vibecli/themes".
-const INITIAL_THEME: ThemeName = "__THEME__";
+const INITIAL_THEME: ThemeName = "pink";
 
 type Turn = { role: "user" | "assistant" | "meta"; text: string };
 
-type ScenarioStep = { input: string; expectContains?: string };
-
-async function runScenario(scriptPath: string): Promise<void> {
+async function runScenarioFromFile(scriptPath: string): Promise<void> {
   const raw = await readFile(scriptPath, "utf8");
   const steps = JSON.parse(raw) as ScenarioStep[];
   const agent = createAgent(provider, SYSTEM_PROMPT);
-  let failed = 0;
-  for (let i = 0; i < steps.length; i++) {
-    const step = steps[i]!;
-    process.stdout.write(`[${i + 1}/${steps.length}] you> ${step.input}\n`);
-    let assistantText = "";
-    for await (const ev of agent.send(step.input)) {
-      if (ev.type === "text") {
-        assistantText += ev.text;
-        process.stdout.write(ev.text);
-      } else if (ev.type === "error") {
-        process.stdout.write(`\n[error] ${ev.message}\n`);
-        failed++;
-      }
-    }
-    process.stdout.write("\n");
-    if (step.expectContains) {
-      const ok = assistantText.toLowerCase().includes(step.expectContains.toLowerCase());
-      process.stdout.write(
-        ok
-          ? `[pass] expectContains: ${step.expectContains}\n`
-          : `[fail] expectContains: ${step.expectContains} (got: ${assistantText.slice(0, 120)}...)\n`,
-      );
-      if (!ok) failed++;
-    }
-  }
-  if (failed > 0) {
-    process.stdout.write(`\nscenario failed: ${failed} issue(s)\n`);
-    process.exit(1);
-  }
-  process.stdout.write(`\nscenario passed: ${steps.length} step(s)\n`);
+  const r = await runScenario(agent, steps);
+  if (r.failed > 0) process.exit(1);
+  else process.exit(0);
 }
 
 const HELP_TEXT = [
@@ -237,7 +209,7 @@ if (scriptIdx >= 0) {
     process.stderr.write("--script requires a path\n");
     process.exit(2);
   }
-  await runScenario(scriptPath);
+  await runScenarioFromFile(scriptPath);
 } else {
   render(<App />);
 }

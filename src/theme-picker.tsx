@@ -11,6 +11,11 @@ export type ThemePickerProps = {
   hint?: string;
 };
 
+/**
+ * Inline theme-switcher with keyboard navigation.
+ * Calls `onPick` immediately on Enter; calls `onCancel` on Escape when provided.
+ * Renders a swatch row per theme using the theme's own accent and secondary colors.
+ */
 export function ThemePicker({
   value,
   onPick,

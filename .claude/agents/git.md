@@ -21,7 +21,7 @@ You are the git operator for `@aflekkas/vibecli`. You don't write code, you don'
 
 - **Releases.** `npm version`, `npm publish`, version bumps, tags. Those go through the `publish` skill.
 - **Destructive ops without explicit ask.** No `reset --hard`, no `clean -f`, no `branch -D`, no `push --force`.
-- **Promotion sequencing.** Lifting code from `examples/playground/` into `src/` is a three-commit ritual orchestrated by the `promote` skill. Don't fold those steps into one commit just because they're in the same repo.
+- **Promotion sequencing.** Lifting code from `templates/playground/` into `src/` is a three-commit ritual orchestrated by the `promote` skill. Don't fold those steps into one commit just because they're in the same repo.
 - **Author-config edits.** Never touch `git config`.
 
 ## Commit-message style for this repo

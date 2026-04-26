@@ -19,7 +19,7 @@ export type TempImageOptions = {
 };
 
 function tempImagePath(ext: string, opts: TempImageOptions = {}): string {
-  const prefix = (opts.prefix ?? "vibecli").replace(/[^a-zA-Z0-9_-]/g, "-") || "vibecli";
+  const prefix = (opts.prefix ?? "clip").replace(/[^a-zA-Z0-9_-]/g, "-") || "clip";
   return join(opts.dir ?? tmpdir(), `${prefix}-${randomBytes(6).toString("hex")}${ext}`);
 }
 
@@ -42,7 +42,7 @@ export async function readImageFile(path: string): Promise<{ mediaType: string; 
 // no image on the clipboard (or the platform isn't macOS).
 export async function readClipboardImage(opts: TempImageOptions = {}): Promise<{ mediaType: string; data: string } | null> {
   if (process.platform !== "darwin") return null;
-  const tmp = tempImagePath(".png", { prefix: "vibecli-paste", ...opts });
+  const tmp = tempImagePath(".png", { prefix: "clip-paste", ...opts });
   const script = `
     try
       set imgData to the clipboard as «class PNGf»

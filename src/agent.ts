@@ -51,6 +51,77 @@ export type Agent = {
   setSystem: (s: string) => void;
 };
 
+type CompactOpts = {
+  contextWindow: number;
+  compactAt: number;
+  compactKeep: number;
+  usage: TurnUsage | undefined;
+};
+
+type CompactResult =
+  | { event: AgentEvent; replaced: true }
+  | { event: AgentEvent; replaced: false };
+
+async function compactMessages(
+  provider: Provider,
+  system: string,
+  state: AgentState,
+  opts: CompactOpts,
+): Promise<CompactResult | null> {
+  const { contextWindow, compactAt, compactKeep, usage } = opts;
+  if (!contextWindow || !usage || typeof usage.input !== "number") return null;
+  if (usage.input / contextWindow <= compactAt) return null;
+
+  const messagesBefore = state.messages.length;
+  const cutoff = Math.max(0, state.messages.length - compactKeep);
+  const olderMessages = state.messages.slice(0, cutoff);
+  const recentTurns = state.messages.slice(cutoff);
+  if (olderMessages.length === 0) return null;
+
+  const synthesisPrompt: Message = {
+    role: "user",
+    content:
+      "Summarize the conversation above in about 500 tokens. Preserve: decisions made, open questions, files/paths touched, current goal. Output only the summary, no preamble.",
+  };
+
+  let summary = "";
+  let summaryTokens: number | undefined;
+  try {
+    for await (const ev of provider.stream({
+      system,
+      messages: [...olderMessages, synthesisPrompt],
+      tools: [],
+    })) {
+      if (ev.type === "text_delta") {
+        summary += ev.text;
+      } else if (ev.type === "done") {
+        summaryTokens = ev.usage?.output;
+      }
+    }
+  } catch (e: any) {
+    return {
+      event: { type: "error", message: `compaction failed: ${e.message || String(e)}` },
+      replaced: false,
+    };
+  }
+
+  state.messages = [
+    { role: "user", content: "<context-summary>\n" + summary + "\n</context-summary>" },
+    { role: "assistant", content: "Got it, continuing from that summary." },
+    ...recentTurns,
+  ];
+
+  return {
+    event: {
+      type: "compacted",
+      messagesBefore,
+      messagesAfter: state.messages.length,
+      summaryTokens,
+    },
+    replaced: true,
+  };
+}
+
 function truncateOldToolResults(messages: Message[], keep: number): number {
   const cutoff = Math.max(0, messages.length - keep);
   let count = 0;
@@ -156,55 +227,16 @@ export function createAgent(provider: Provider, system: string, opts: AgentOptio
         yield { type: "turn_done", usage };
         await fire("post_turn", { status: "ok" });
 
-        if (
-          opts.contextWindow &&
-          usage &&
-          typeof usage.input === "number" &&
-          usage.input / opts.contextWindow > compactAt
-        ) {
-          const messagesBefore = state.messages.length;
-          const cutoff = Math.max(0, state.messages.length - compactKeep);
-          const olderMessages = state.messages.slice(0, cutoff);
-          const recentTurns = state.messages.slice(cutoff);
-
-          if (olderMessages.length > 0) {
-            const synthesisPrompt: Message = {
-              role: "user",
-              content:
-                "Summarize the conversation above in about 500 tokens. Preserve: decisions made, open questions, files/paths touched, current goal. Output only the summary, no preamble.",
-            };
-
-            let summary = "";
-            let summaryTokens: number | undefined;
-            try {
-              for await (const ev of provider.stream({
-                system: currentSystem,
-                messages: [...olderMessages, synthesisPrompt],
-                tools: [],
-              })) {
-                if (ev.type === "text_delta") {
-                  summary += ev.text;
-                } else if (ev.type === "done") {
-                  summaryTokens = ev.usage?.output;
-                }
-              }
-            } catch (e: any) {
-              yield { type: "error", message: `compaction failed: ${e.message || String(e)}` };
-              return;
-            }
-
-            state.messages = [
-              { role: "user", content: "<context-summary>\n" + summary + "\n</context-summary>" },
-              { role: "assistant", content: "Got it, continuing from that summary." },
-              ...recentTurns,
-            ];
-
-            yield {
-              type: "compacted",
-              messagesBefore,
-              messagesAfter: state.messages.length,
-              summaryTokens,
-            };
+        if (opts.contextWindow) {
+          const result = await compactMessages(provider, currentSystem, state, {
+            contextWindow: opts.contextWindow,
+            compactAt,
+            compactKeep,
+            usage,
+          });
+          if (result) {
+            yield result.event;
+            if (!result.replaced) return;
           }
         }
         return;

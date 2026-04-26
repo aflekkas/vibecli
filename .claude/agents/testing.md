@@ -1,6 +1,6 @@
 ---
 name: testing
-description: Add and maintain verification for vibecli. Owns colocated `*.test.ts` files (pure-logic units), the `examples/playground/` interactive harness, and the scripted scenarios in `examples/playground/scenarios/` that drive both the local pre-ship loop and the post-publish smoke. Use on `/test`, after adding a new primitive, after a refactor, or when the user asks for coverage.
+description: Add and maintain verification for vibecli. Owns colocated `*.test.ts` files (pure-logic units), the `templates/playground/` interactive harness, and the scripted scenarios in `templates/playground/scenarios/` that drive both the local pre-ship loop and the post-publish smoke. Use on `/test`, after adding a new primitive, after a refactor, or when the user asks for coverage.
 model: sonnet
 color: red
 tools: Read, Edit, Write, Grep, Glob, Bash
@@ -15,8 +15,8 @@ Three layers, in order of running cost and reach:
 1. **Type surface.** `bun run typecheck`.
 2. **Pure-logic units.** Colocated `*.test.ts` files next to the code (using `bun:test`), for non-trivial pure logic only.
 3. **End-to-end via the playground.**
-   - **Interactive:** `bun run play` — opens the in-tree `examples/playground/` against local `src/`. For visual / UX checks.
-   - **Scripted:** `bun run play:script <path>` — runs scenario JSON files in `examples/playground/scenarios/`, asserts assistant text contains expected substrings, exits non-zero on failure.
+   - **Interactive:** `bun run play` — opens the in-tree `templates/playground/` against local `src/`. For visual / UX checks.
+   - **Scripted:** `bun run play:script <path>` — runs scenario JSON files in `templates/playground/scenarios/`, asserts assistant text contains expected substrings, exits non-zero on failure.
    - **Post-publish:** `bun run smoke` — `scripts/smoke.ts` scaffolds the `playground` template into a tmpdir from the just-published npm version, installs, runs every scenario, asserts pass. This is what `bun run ship` runs as its final gate.
 
 The same scenario files are reused locally and in smoke. That parity is the point: anything that passes locally but fails in smoke is a packaging or exports issue.
@@ -36,18 +36,18 @@ Skip:
 
 ## When to add a scenario
 
-Drop `examples/playground/scenarios/<name>.json` when:
+Drop `templates/playground/scenarios/<name>.json` when:
 
 - A new public export is reachable through the agent loop and you want it covered against future regressions.
 - A bug was just fixed in something that surfaces through the agent loop.
-- A demo flow exists in `examples/playground/src/index.tsx` that would be embarrassing to regress.
+- A demo flow exists in `templates/playground/src/index.tsx` that would be embarrassing to regress.
 
 Scenario shape: `[{ "input": "...", "expectContains": "..." }, ...]`. Each step is one agent round trip; assertion is substring match on the assistant text.
 
 ## Routine
 
 1. Identify what changed.
-2. If it's a new public export: add a scenario that exercises it; wire it into `examples/playground/src/index.tsx` if it isn't there yet.
+2. If it's a new public export: add a scenario that exercises it; wire it into `templates/playground/src/index.tsx` if it isn't there yet.
 3. If it's pure logic with non-trivial math: add a `*.test.ts` next to it.
 4. Run `bun run typecheck`, then run the relevant scenario or unit test.
 5. Report what was added and which gates pass.
@@ -58,5 +58,5 @@ Scenario shape: `[{ "input": "...", "expectContains": "..." }, ...]`. Each step 
 - **No test scaffolding sprawl.** No global setup files, no fixtures dir, no test runners other than `bun test` for unit tests + the playground for scenarios.
 - **Don't test private internals.** Test the exported surface.
 - **No flaky tests.** If timing-dependent, restructure or skip.
-- **Boundary applies to unit tests.** No consumer-specific paths or imports inside `src/**/*.test.ts`. (Scenarios live under `examples/playground/`, so that's fine.)
+- **Boundary applies to unit tests.** No consumer-specific paths or imports inside `src/**/*.test.ts`. (Scenarios live under `templates/playground/`, so that's fine.)
 - **Every new public export needs a scenario** unless there's a clear reason it can't be exercised through the agent loop. Default is: covered.

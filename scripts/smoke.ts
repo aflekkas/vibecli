@@ -4,7 +4,7 @@
  *  1. mkdtemp
  *  2. scaffold playground from just-published vibecli into the tmpdir
  *  3. bun install (real npm pull)
- *  4. for each examples/playground/scenarios/*.json, run scaffolded app with
+ *  4. for each templates/playground/scenarios/*.json, run scaffolded app with
  *     --script and assert pass
  *  5. cleanup
  *
@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
-const SCENARIOS_DIR = resolve(REPO, "examples", "playground", "scenarios");
+const SCENARIOS_DIR = resolve(REPO, "templates", "playground", "scenarios");
 
 type SpawnResult = { code: number | null; stdout: string; stderr: string };
 
@@ -64,7 +64,7 @@ async function main(): Promise<void> {
   const version = await readPackageVersion();
   const scenarios = await listScenarios();
   if (scenarios.length === 0) {
-    process.stderr.write("smoke: no scenarios in examples/playground/scenarios/\n");
+    process.stderr.write("smoke: no scenarios in templates/playground/scenarios/\n");
     process.exit(0);
   }
 

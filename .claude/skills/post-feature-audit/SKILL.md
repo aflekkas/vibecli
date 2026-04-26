@@ -46,16 +46,21 @@ If anything fails, hand to `documentation`.
 
 ### 6. Documentation parity
 
+The docs in this repo (`README.md`, `docs/*.md`, JSDoc, template + example READMEs) are the **user-facing surface** of `@aflekkas/vibecli` — how someone scaffolding a CLI from npm learns what the library does and how to use it. Treat this stage as "would a new user, reading docs alone, discover and use the new feature correctly".
+
+Quick checks:
+
 - README body paragraph still accurate.
 - `CLAUDE.md` "Layout" tree still matches reality.
 - `docs/*.md` references valid.
 - JSDoc on new exported APIs covers the *why*.
 
+Then **hand off to the `documentation` agent for a full sweep of user-facing docs**. Brief it explicitly: docs are the public learning surface, not internal parity. Ask it to check whether anything in the touched area is undocumented or under-documented from a *user's* perspective — new exports without a README "What's in here" entry, primitives without a usage example a stranger could copy-paste, subpaths missing from `package.json` `exports`, configuration knobs not mentioned in `docs/configuration.md`, CLI surface changes missing from `docs/cli.md`, template/playground READMEs that no longer reflect what the scaffold ships, README sections that describe behavior the code no longer has. The agent reports back; fold its findings into this stage's pass/fail.
+
 ### 7. Playground + scenario coverage
 
-- `examples/playground/src/index.tsx` imports any new public export the feature added (or has a clear reason it shouldn't, e.g. low-level helper not meant for the demo surface).
-- `templates/playground/src/index.tsx` mirrors the playground wiring for anything user-facing.
-- At least one new scenario in `examples/playground/scenarios/` exercises the new primitive end-to-end via the agent loop.
+- `templates/playground/src/index.tsx` imports any new public export the feature added (or has a clear reason it shouldn't, e.g. low-level helper not meant for the demo surface).
+- At least one new scenario in `templates/playground/scenarios/` exercises the new primitive end-to-end via the agent loop.
 - `bun run play` opens cleanly; `bun run play:script <scenario>` passes locally (provider key set).
 
 ### 8. Smoke readiness

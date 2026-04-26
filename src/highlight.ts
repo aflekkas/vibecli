@@ -1,7 +1,6 @@
 // ANSI syntax highlighter for markdown fenced code blocks.
 // Regex-based, zero deps. Only touches content inside triple-backtick fences.
 
-import { createVibeConfig, defaultHighlightTheme } from "./ui-config.tsx";
 import type { VibeConfigInput } from "./ui-config.tsx";
 
 export type HighlightTheme = {
@@ -20,7 +19,16 @@ export type HighlightOptions = {
   theme?: Partial<HighlightTheme>;
 };
 
-export { defaultHighlightTheme };
+export const defaultHighlightTheme: HighlightTheme = {
+  reset: "\x1b[0m",
+  dim: "\x1b[2m",
+  undim: "\x1b[22m",
+  keyword: "\x1b[35m",
+  string: "\x1b[32m",
+  number: "\x1b[33m",
+  comment: "\x1b[2;37m",
+  commentOff: "\x1b[22;39m",
+};
 
 type LangKey =
   | "ts"
@@ -158,8 +166,11 @@ function highlightBlock(code: string, lang: LangKey, theme: HighlightTheme): str
 }
 
 export function highlight(text: string, opts: HighlightOptions = {}): string {
-  const vibeConfig = createVibeConfig(opts.config);
-  const theme = { ...vibeConfig.highlight.theme, ...opts.theme };
+  const theme: HighlightTheme = {
+    ...defaultHighlightTheme,
+    ...opts.config?.highlight?.theme,
+    ...opts.theme,
+  };
   const lines = text.split("\n");
   const out: string[] = [];
   let i = 0;

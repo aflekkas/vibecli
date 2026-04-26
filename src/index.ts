@@ -136,3 +136,10 @@ export type {
   ToolHandler,
   TurnUsage,
 } from "./agent.ts";
+export { runScenario } from "./scenarios.ts";
+export type {
+  RunScenarioOptions,
+  ScenarioFailure,
+  ScenarioResult,
+  ScenarioStep,
+} from "./scenarios.ts";

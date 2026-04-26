@@ -3,6 +3,11 @@ export type Frontmatter = {
   body: string;
 };
 
+/**
+ * Parses a `---`-delimited YAML-like frontmatter block from the start of `raw`.
+ * Returns `null` when no opening fence is found.
+ * Keys are lowercased; single- and double-quoted values are unquoted.
+ */
 export function parseFrontmatter(raw: string): Frontmatter | null {
   const text = raw.replace(/^﻿/, "").replace(/\r\n/g, "\n");
   if (!text.startsWith("---\n") && !text.startsWith("---\r")) return null;
@@ -43,6 +48,10 @@ export function parseBool(v: string | undefined, fallback: boolean): boolean {
   return fallback;
 }
 
+/**
+ * Extracts the first non-empty, non-heading line from `body` as a short
+ * description, ellipsized to `maxLen` characters (default 160).
+ */
 export function deriveDescription(body: string, maxLen = 160): string {
   for (const raw of body.split("\n")) {
     const line = raw.trim();

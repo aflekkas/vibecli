@@ -89,6 +89,7 @@ Use subpath imports for focused code. The root package also re-exports the curre
 | `@aflekkas/vibecli/providers` | Generic `Message`, `ContentBlock`, `ToolDef`, `Provider`, `StreamEvent` types you build against |
 | `@aflekkas/vibecli/providers/adapter` | `AiSdkProvider`, Vercel AI SDK adapter wired for Anthropic prompt caching, adaptive thinking, and OpenAI prompt-cache keys |
 | `@aflekkas/vibecli/agent` | `createAgent(provider, system, opts)` — provider-agnostic stream loop with tool execution, abort handling, tool-result truncation, optional auto-compaction, and lifecycle hooks |
+| `@aflekkas/vibecli/scenarios` | `runScenario(agent, steps, opts?)` — scripted scenario runner for agent CLIs, drives a step list, asserts on assistant text, returns a structured result |
 | `vibecli mcp` (bin subcommand) | Local stdio MCP server that wraps this package's README + `docs/*.md`. Plug into Claude Code so an agent can scaffold a vibecli CLI against the current API. See the **Docs MCP** section above. |
 
 ## 📚 Docs
@@ -156,6 +157,20 @@ for await (const ev of agent.send("what time is it?")) {
   if (ev.type === "text") process.stdout.write(ev.text);
   if (ev.type === "tool_start") console.error(`[tool] ${ev.name}`);
 }
+```
+
+Smoke-test a CLI by scripting a sequence of user inputs and assertions against the assistant's text:
+
+```ts
+import { runScenario, type ScenarioStep } from "@aflekkas/vibecli/scenarios";
+
+const steps: ScenarioStep[] = [
+  { input: "say hi", expectContains: "hi" },
+  { input: "what is 2+2?", expectMatches: /\b4\b/ },
+];
+
+const result = await runScenario(agent, steps);
+if (result.failed > 0) process.exit(1);
 ```
 
 Drop `<TextInput>` into an Ink app:
@@ -363,7 +378,7 @@ Project-source dirs override user-source dirs by name (later entries in `dirs` w
 
 Code in `src/` is generic on purpose. The adapter inspects `"anthropic"` / `"openai"` strings to wire provider-specific options (cache control, prompt-cache keys, adaptive thinking), but nothing else app-specific belongs there: no runtime artifact paths, no specific tool names, no slash commands, no imports from any consumer. If a feature needs app context, take it as a constructor arg, function param, or React prop.
 
-The boundary applies to `src/` only. `examples/playground/` is the in-tree consumer — opinionated wiring, slash commands, demo flows live there. Promotion from the playground into `src/` is cheap. Demotion after publish is an API break. When in doubt, build it in the playground first.
+The boundary applies to `src/` only. `templates/playground/` is the in-tree consumer — opinionated wiring, slash commands, demo flows live there. Promotion from the playground into `src/` is cheap. Demotion after publish is an API break. When in doubt, build it in the playground first.
 
 ## 🔧 Local development
 
@@ -374,11 +389,11 @@ bun run typecheck
 
 This repo is itself built with a small claude-code-native stack — agents, skills, and slash commands live under [`.claude/`](.claude/) and `CLAUDE.md` orchestrates them. Open the directory if you're curious how the package is iterated on day to day.
 
-vibecli has its own canonical consumer in-tree at `examples/playground/`. It resolves `@aflekkas/vibecli/*` to local `src/*` via tsconfig paths, so edits to `src/` show up next run with no install or symlink dance. Run it interactively or scripted:
+vibecli has its own canonical consumer in-tree at `templates/playground/`. It resolves `@aflekkas/vibecli/*` to local `src/*` via tsconfig paths, so edits to `src/` show up next run with no install or symlink dance. Run it interactively or scripted:
 
 ```bash
 bun run play                                          # interactive Ink chat against local src/
-bun run play:script examples/playground/scenarios/<name>.json  # non-interactive, asserts assistant text
+bun run play:script templates/playground/scenarios/<name>.json  # non-interactive, asserts assistant text
 ```
 
 Verifying a release end-to-end:
@@ -389,7 +404,7 @@ git add . && git commit -m "organize internals"
 bun run ship   # typecheck → version bump → npm publish → push tags → bun run smoke
 ```
 
-`bun run smoke` (`scripts/smoke.ts`) scaffolds the `playground` template into a tmpdir from the just-published version, real `bun install`, runs every scripted scenario in `examples/playground/scenarios/`, asserts pass. That's the integration test on every release. Set `ANTHROPIC_API_KEY` in env before shipping for full coverage; without it the smoke step skips silently.
+`bun run smoke` (`scripts/smoke.ts`) scaffolds the `playground` template into a tmpdir from the just-published version, real `bun install`, runs every scripted scenario in `templates/playground/scenarios/`, asserts pass. That's the integration test on every release. Set `ANTHROPIC_API_KEY` in env before shipping for full coverage; without it the smoke step skips silently.
 
 ## 🗺️ Roadmap
 

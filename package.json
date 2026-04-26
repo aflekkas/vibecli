@@ -43,7 +43,8 @@
     "./theme-picker": "./src/theme-picker.tsx",
     "./commands": "./src/commands/reserved.ts",
     "./frontmatter": "./src/frontmatter.ts",
-    "./markdown-dir": "./src/markdown-dir.ts"
+    "./markdown-dir": "./src/markdown-dir.ts",
+    "./scenarios": "./src/scenarios.ts"
   },
   "files": [
     "bin",
@@ -54,8 +55,8 @@
   ],
   "scripts": {
     "typecheck": "bunx tsc --noEmit",
-    "play": "bun --cwd examples/playground src/index.tsx",
-    "play:script": "bun --cwd examples/playground src/index.tsx --script",
+    "play": "bun --cwd templates/playground src/index.tsx",
+    "play:script": "bun --cwd templates/playground src/index.tsx --script",
     "smoke": "bun run scripts/smoke.ts",
     "ship": "bun run typecheck && npm version patch && npm publish --access public && git push --follow-tags && bun run smoke",
     "ship:minor": "bun run typecheck && npm version minor && npm publish --access public && git push --follow-tags && bun run smoke",

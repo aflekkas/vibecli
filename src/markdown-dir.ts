@@ -63,6 +63,14 @@ function entryPath(dir: string, entry: string, mode: "file" | "dir", dirEntrypoi
   return file;
 }
 
+/**
+ * Walks one or more directories of `.md` files (or subdirs with an entrypoint),
+ * parses each entry with the caller-supplied `parseEntry`, and returns a
+ * deduplicated, alphabetically-sorted list.
+ *
+ * Later dirs in `opts.dirs` override earlier ones for the same name.
+ * Names matching `reserved` are skipped with a warning.
+ */
 export function loadMarkdownDir<T extends { name: string }>(
   opts: LoadMarkdownDirOptions<T>,
 ): T[] {

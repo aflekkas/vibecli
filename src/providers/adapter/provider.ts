@@ -102,7 +102,7 @@ export class AiSdkProvider implements Provider {
         openaiOptions.promptCacheKey = this.openai.promptCacheKey ?? this.sessionId;
       }
       if (this.openai.user !== false) {
-        openaiOptions.user = this.openai.user ?? `vibecli-${this.sessionId}`;
+        openaiOptions.user = this.openai.user ?? this.sessionId;
       }
       if (Object.keys(openaiOptions).length) defaultProviderOptions.openai = openaiOptions;
     }

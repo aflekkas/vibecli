@@ -81,6 +81,11 @@ const ASSET_EXTS = new Set([
   ".woff2",
 ]);
 
+/**
+ * BFS-ordered file walk from `root`, capped by `maxFiles` and `maxDepth`.
+ * Sets `truncated: true` if the file cap was hit mid-walk.
+ * Returns per-file language + kind metadata and aggregate language/kind counts.
+ */
 export async function buildRepoMap(root: string, opts: RepoMapOptions = {}): Promise<RepoMap> {
   const maxFiles = opts.maxFiles ?? 500;
   const maxDepth = opts.maxDepth ?? 8;
@@ -150,6 +155,10 @@ export function languageForPath(path: string): string | null {
   return LANGUAGE_BY_EXT[extname(path).toLowerCase()] ?? null;
 }
 
+/**
+ * Classifies a file path into a `RepoFileKind` using heuristic precedence:
+ * asset > docs > test > config > source (has known language) > other.
+ */
 export function classifyRepoFile(path: string): RepoFileKind {
   const name = basename(path).toLowerCase();
   const ext = extname(name);

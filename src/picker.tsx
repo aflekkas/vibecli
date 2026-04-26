@@ -30,6 +30,11 @@ function truncate(text: string, max: number): string {
   return text.slice(0, max - 1) + "…";
 }
 
+/**
+ * Paginated modal menu. Scroll, selection, and keyboard bindings are handled
+ * by the caller — pass the current `selected` index and re-render on change.
+ * `columns`/`rows` should come from `useStdoutDimensions` or equivalent.
+ */
 export function Picker({
   title,
   subtitle,

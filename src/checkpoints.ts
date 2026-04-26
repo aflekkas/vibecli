@@ -22,6 +22,14 @@ function defaultClone<T>(value: T): T {
   }
 }
 
+/**
+ * Undo/redo checkpoint stack over an arbitrary value type.
+ *
+ * Values are deep-cloned via `structuredClone` (with identity-fallback for
+ * non-cloneable types). `checkpoint()` pushes a new past entry and clears
+ * the redo stack. `replace()` overwrites the present without touching history.
+ * `clear()` resets both past and future stacks.
+ */
 export class CheckpointHistory<T> {
   private past: Checkpoint<T>[] = [];
   private present: Checkpoint<T>;
@@ -112,6 +120,7 @@ export class CheckpointHistory<T> {
   }
 }
 
+/** Factory shorthand for `new CheckpointHistory(initialValue, opts)`. */
 export function createCheckpointHistory<T>(
   initialValue: T,
   opts?: CheckpointHistoryOptions<T>,

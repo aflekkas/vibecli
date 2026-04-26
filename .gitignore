@@ -5,3 +5,8 @@ node_modules
 # Local agent instructions, not meant for the public repo
 AGENTS.md
 CLAUDE.md
+
+# Dev artifacts inside the live template playground
+templates/playground/node_modules
+templates/playground/bun.lock
+templates/playground/.env

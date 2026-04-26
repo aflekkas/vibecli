@@ -1,11 +1,11 @@
 ---
 name: promote
-description: Three-step procedure for promoting a feature from `examples/playground/` into `src/` so it ships as part of `@aflekkas/vibecli`. Triggers on phrases like "promote X", "lift X into src", "make X part of the public API", "/promote".
+description: Three-step procedure for promoting a feature from `templates/playground/` into `src/` so it ships as part of `@aflekkas/vibecli`. Triggers on phrases like "promote X", "lift X into src", "make X part of the public API", "/promote".
 ---
 
 # Promote
 
-vibecli is an extracted library. The default flow is **vibecode in `examples/playground/` first, promote into `src/` later.** This skill is the protocol for that promotion.
+vibecli is an extracted library. The default flow is **vibecode in `templates/playground/` first, promote into `src/` later.** This skill is the protocol for that promotion.
 
 When to promote: the feature is stable in the playground, the generic core is visible after stripping demo-only wiring, and a hypothetical second consumer (someone scaffolding a CLI from the published package) would obviously want it. If only one of those holds, **don't promote yet.**
 
@@ -15,7 +15,7 @@ Three distinct commits, all in this repo. Never combine them.
 
 ### 1. Lift the generic core to `src/`
 
-1. Read the inline implementation in `examples/playground/src/index.tsx` (or wherever it lives in the playground tree).
+1. Read the inline implementation in `templates/playground/src/index.tsx` (or wherever it lives in the playground tree).
 2. Create `src/<module>.ts` (or `.tsx`) holding only the generic core.
 3. **Strip playground-specific bits to params or constructor args.** No tool names, no slash command literals, no demo wiring, no consumer-specific config keys.
 4. Add the subpath to `package.json` `exports`:
@@ -23,7 +23,7 @@ Three distinct commits, all in this repo. Never combine them.
    "./<module>": "./src/<module>.ts"
    ```
 5. If the public function/class signature changed shape, update `README.md` "What's in here" table and add at least one usage example.
-6. Add a matching scenario to `examples/playground/scenarios/` if the new primitive is exercised through the agent loop.
+6. Add a matching scenario to `templates/playground/scenarios/` if the new primitive is exercised through the agent loop.
 7. `bun run typecheck`.
 8. Commit: short imperative, e.g. `add <feature> primitive`.
 
@@ -31,12 +31,11 @@ Three distinct commits, all in this repo. Never combine them.
 
 Same repo, separate commit so the lift is bisectable.
 
-1. In `examples/playground/src/index.tsx`, replace the inline implementation with `import { X } from "@aflekkas/vibecli/<module>"`. Tsconfig paths resolve this to local `src/`, so no install is needed.
-2. Update `templates/playground/src/index.tsx` to expose the same wiring (this is what real users get when they scaffold).
-3. `bun run typecheck`.
-4. `bun run play` — verify it runs interactively against local source.
-5. `bun run play:script scenarios/<relevant>.json` — verify scripted scenario passes.
-6. Commit: short imperative, e.g. `wire <feature> into playground + template`.
+1. In `templates/playground/src/index.tsx`, replace the inline implementation with `import { X } from "@aflekkas/vibecli/<module>"`. Tsconfig paths resolve this to local `src/` during dev; on `vibecli init` the same file ships to scaffolded users with paths stripped.
+2. `bun run typecheck`.
+3. `bun run play` — verify it runs interactively against local source.
+4. `bun run play:script templates/playground/scenarios/<relevant>.json` — verify scripted scenario passes.
+5. Commit: short imperative, e.g. `wire <feature> into playground`.
 
 ### 3. Ship
 

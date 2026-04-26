@@ -9,7 +9,15 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": ["bun", "react"]
+    "types": ["bun", "react"],
+    "baseUrl": ".",
+    "paths": {
+      "@aflekkas/vibecli": ["../../src/index.ts"],
+      "@aflekkas/vibecli/config": ["../../src/ui-config.tsx"],
+      "@aflekkas/vibecli/providers": ["../../src/providers/types.ts"],
+      "@aflekkas/vibecli/commands": ["../../src/commands/reserved.ts"],
+      "@aflekkas/vibecli/*": ["../../src/*"]
+    }
   },
   "include": ["src/**/*"]
 }

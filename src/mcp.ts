@@ -48,6 +48,10 @@ export type McpToolResult = {
   isError?: boolean;
 };
 
+/**
+ * Converts an MCP tool descriptor to the generic `ToolDef` shape.
+ * Preserves `required` only when the input schema includes it.
+ */
 export function mcpToolToToolDef(tool: McpTool): ToolDef {
   return {
     name: tool.name,
@@ -64,6 +68,7 @@ export function mcpToolsToToolDefs(tools: McpTool[]): ToolDef[] {
   return tools.map(mcpToolToToolDef);
 }
 
+/** Inverse of `mcpToolToToolDef`. Preserves `required` only when present. */
 export function toolDefToMcpTool(tool: ToolDef): McpTool {
   return {
     name: tool.name,
@@ -76,6 +81,11 @@ export function toolDefToMcpTool(tool: ToolDef): McpTool {
   };
 }
 
+/**
+ * Lossy collapse of an MCP tool result to a plain string.
+ * Image and audio blocks become `[image: …]` / `[audio: …]` placeholders.
+ * Embedded resources prefer their `text` field; fall back to the URI.
+ */
 export function mcpResultToText(result: McpToolResult): string {
   return result.content
     .map((block) => {

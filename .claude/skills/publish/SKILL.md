@@ -36,7 +36,7 @@ Defined in `package.json`:
 2. `npm version patch|minor|major` — bumps `package.json`, makes a git tag, makes a commit on top of yours.
 3. `npm publish --access public` — pushes to npm. Requires `~/.npmrc` token with publish scope.
 4. `git push --follow-tags` — pushes commit + tag to GitHub.
-5. `bun run smoke` — `scripts/smoke.ts`: `mkdtemp` a sandbox, scaffold the `playground` template against the just-published version, `bun install`, run every `examples/playground/scenarios/*.json` against the scaffolded app via `--script`, assert pass, cleanup.
+5. `bun run smoke` — `scripts/smoke.ts`: `mkdtemp` a sandbox, scaffold the `playground` template against the just-published version, `bun install`, run every `templates/playground/scenarios/*.json` against the scaffolded app via `--script`, assert pass, cleanup.
 
 ## After ship
 

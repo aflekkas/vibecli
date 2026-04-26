@@ -54,6 +54,13 @@ function isRetryable(err: any): boolean {
   return false;
 }
 
+/**
+ * Wraps an async factory `fn` with exponential-backoff retries.
+ *
+ * Only retries the initial call — does not resume a stream that started
+ * streaming. Retries on 429/5xx status codes and transient network errors.
+ * Respects `Retry-After` headers when present.
+ */
 export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOpts = {}): Promise<T> {
   const retries = opts.retries ?? 4;
   const baseMs = opts.baseMs ?? 500;

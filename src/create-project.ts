@@ -63,16 +63,28 @@ function packageName(input: string): string {
   return base || "vibecli-app";
 }
 
+const SCAFFOLD_EXCLUDE_DIRS = new Set(["scenarios", "node_modules"]);
+const SCAFFOLD_EXCLUDE_FILES = new Set([".env", "bun.lock", "bun.lockb"]);
+
+function isExcludedFromScaffold(rel: string): boolean {
+  const parts = rel.split(/[\\/]/);
+  if (parts.some((p) => SCAFFOLD_EXCLUDE_DIRS.has(p))) return true;
+  const base = parts[parts.length - 1] ?? "";
+  return SCAFFOLD_EXCLUDE_FILES.has(base);
+}
+
 async function walkTemplate(root: string): Promise<string[]> {
   const out: string[] = [];
   async function walk(dir: string) {
     const entries = await readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
       const full = join(dir, entry.name);
+      const rel = relative(root, full);
+      if (isExcludedFromScaffold(rel)) continue;
       if (entry.isDirectory()) {
         await walk(full);
       } else if (entry.isFile()) {
-        out.push(relative(root, full));
+        out.push(rel);
       }
     }
   }
@@ -114,12 +126,21 @@ function scriptsForPackageManager(packageManager: PackageManager): ScriptsBlock 
 function adaptPackageJson(
   raw: string,
   packageManager: PackageManager,
+  name: string,
+  vibecliVersion: string,
 ): string {
   const parsed = JSON.parse(raw) as {
+    name?: string;
     scripts?: ScriptsBlock;
+    dependencies?: Record<string, string>;
     devDependencies?: Record<string, string>;
   };
+  parsed.name = name;
   parsed.scripts = scriptsForPackageManager(packageManager);
+  parsed.dependencies = {
+    "@aflekkas/vibecli": vibecliVersion,
+    ...(parsed.dependencies ?? {}),
+  };
   if (packageManager === "npm") {
     const dev = { ...(parsed.devDependencies ?? {}) };
     delete dev["@types/bun"];
@@ -130,16 +151,30 @@ function adaptPackageJson(
 }
 
 function adaptTsconfig(raw: string, packageManager: PackageManager): string {
-  if (packageManager === "bun") return raw;
   const parsed = JSON.parse(raw) as {
-    compilerOptions?: { types?: string[] };
+    compilerOptions?: {
+      types?: string[];
+      paths?: Record<string, string[]>;
+      baseUrl?: string;
+    };
   };
-  if (parsed.compilerOptions?.types) {
-    parsed.compilerOptions.types = parsed.compilerOptions.types.filter(
-      (t) => t !== "bun",
-    );
+  if (parsed.compilerOptions) {
+    delete parsed.compilerOptions.paths;
+    delete parsed.compilerOptions.baseUrl;
+    if (packageManager === "npm" && parsed.compilerOptions.types) {
+      parsed.compilerOptions.types = parsed.compilerOptions.types.filter(
+        (t) => t !== "bun",
+      );
+    }
   }
   return `${JSON.stringify(parsed, null, 2)}\n`;
+}
+
+function substituteThemeDefault(content: string, themeName: string): string {
+  return content.replace(
+    /INITIAL_THEME: ThemeName = "[^"]+"/,
+    `INITIAL_THEME: ThemeName = "${themeName}"`,
+  );
 }
 
 async function writeProjectFile(
@@ -225,10 +260,13 @@ export async function createProjectSkeleton(
     const raw = await readFile(abs, "utf8");
     let content = substitutePlaceholders(raw, placeholders);
     const target = targetRelativePath(rel);
-    if (basename(target) === "package.json") {
-      content = adaptPackageJson(content, packageManager);
-    } else if (basename(target) === "tsconfig.json") {
+    const baseName = basename(target);
+    if (baseName === "package.json") {
+      content = adaptPackageJson(content, packageManager, name, vibecliVersion);
+    } else if (baseName === "tsconfig.json") {
       content = adaptTsconfig(content, packageManager);
+    } else if (target === join("src", "index.tsx")) {
+      content = substituteThemeDefault(content, theme);
     }
     files.push(await writeProjectFile(dir, target, content, force));
   }
