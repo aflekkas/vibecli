@@ -1,4 +1,6 @@
-# vibecli
+# 🛠️ vibecli
+
+> Skip the AI CLI boilerplate
 
 Reusable Ink + AI SDK primitives for vibecoded CLIs. Extracted from [rawdog](https://github.com/aflekkas/rawdog).
 
