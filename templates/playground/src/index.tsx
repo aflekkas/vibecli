@@ -10,13 +10,12 @@ import { ThemePicker } from "@aflekkas/vibecli/theme-picker";
 import { AiSdkProvider } from "@aflekkas/vibecli/providers/adapter";
 import { createAgent, type Agent } from "@aflekkas/vibecli/agent";
 import { readClipboardImage } from "@aflekkas/vibecli/clipboard";
-import { runScenario, type ScenarioStep } from "@aflekkas/vibecli/scenarios";
+import { runScenarioFile } from "@aflekkas/vibecli/scenarios";
 import { createCheckpointHistory } from "@aflekkas/vibecli/checkpoints";
 import { useAgentStream, MessageList } from "@aflekkas/vibecli/chat";
 import { defineModel, ModelPicker } from "@aflekkas/vibecli/models";
 import { createSlashRegistry } from "@aflekkas/vibecli/slash";
 import type { ContentBlock, Message, Provider } from "@aflekkas/vibecli/providers";
-import { readFile } from "node:fs/promises";
 import { buildTools } from "./tools.ts";
 
 // Model registry. Add an entry to expose a new model in `/model`.
@@ -51,13 +50,6 @@ const SYSTEM_PROMPT = [
 // `defineTheme({ accent: "#hex", ... })` from "@aflekkas/vibecli/themes".
 const INITIAL_THEME: ThemeName = "pink";
 
-async function runScenarioFromFile(scriptPath: string, provider: Provider): Promise<void> {
-  const raw = await readFile(scriptPath, "utf8");
-  const steps = JSON.parse(raw) as ScenarioStep[];
-  const agent = createAgent(provider, SYSTEM_PROMPT, { tools: buildTools() });
-  const r = await runScenario(agent, steps);
-  process.exit(r.failed > 0 ? 1 : 0);
-}
 
 function Chat({
   themeName,
@@ -251,7 +243,9 @@ if (scriptIdx >= 0) {
     process.exit(2);
   }
   const initial = MODELS.find((m) => m.id === DEFAULT_MODEL_ID) ?? MODELS[0]!;
-  await runScenarioFromFile(scriptPath, initial.build());
+  const agent = createAgent(initial.build(), SYSTEM_PROMPT, { tools: buildTools() });
+  const r = await runScenarioFile(scriptPath, agent);
+  process.exit(r.failed > 0 ? 1 : 0);
 } else {
   render(<App />);
 }
