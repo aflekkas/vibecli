@@ -38,6 +38,7 @@
       "@aflekkas/vibecli/status-line": ["../../src/io/status-line.ts"],
       "@aflekkas/vibecli/frontmatter": ["../../src/io/frontmatter.ts"],
       "@aflekkas/vibecli/markdown-dir": ["../../src/io/markdown-dir.ts"],
+      "@aflekkas/vibecli/create-project": ["../../src/scaffold/create-project.ts"],
       "@aflekkas/vibecli/*": ["../../src/*"]
     }
   },

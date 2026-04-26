@@ -29,7 +29,7 @@
     "./ui": "./src/ui/ui.tsx",
     "./config": "./src/ui/ui-config.tsx",
     "./retry": "./src/agent/retry.ts",
-    "./create-project": "./src/create-project.ts",
+    "./create-project": "./src/scaffold/create-project.ts",
     "./checkpoints": "./src/agent/checkpoints.ts",
     "./lsp": "./src/io/lsp.ts",
     "./mcp": "./src/io/mcp.ts",

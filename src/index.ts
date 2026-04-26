@@ -50,13 +50,13 @@ export {
 export type { GradientConfig, GradientTextProps, VibeTheme, VibeThemeInput } from "./ui/ui.tsx";
 export { withRetry } from "./agent/retry.ts";
 export type { RetryOpts } from "./agent/retry.ts";
-export { createProjectSkeleton } from "./create-project.ts";
+export { createProjectSkeleton } from "./scaffold/create-project.ts";
 export type {
   CreatedFile,
   CreateProjectOptions,
   CreateProjectResult,
   PackageManager,
-} from "./create-project.ts";
+} from "./scaffold/create-project.ts";
 export { CheckpointHistory, createCheckpointHistory } from "./agent/checkpoints.ts";
 export type { Checkpoint, CheckpointHistoryOptions } from "./agent/checkpoints.ts";
 export {

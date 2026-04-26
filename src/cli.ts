@@ -8,7 +8,7 @@ import {
   isBuiltInTemplate,
   type BuiltInTemplate,
   type PackageManager,
-} from "./create-project.ts";
+} from "./scaffold/create-project.ts";
 import { isThemeName, themeNames, type ThemeName } from "./ui/themes.ts";
 
 type CliOptions = {
@@ -156,7 +156,7 @@ async function main() {
   }
 
   if (parsed === "mcp") {
-    const { runDocsMcpServer } = await import("./mcp-server.ts");
+    const { runDocsMcpServer } = await import("./scaffold/mcp-server.ts");
     await runDocsMcpServer();
     return;
   }
