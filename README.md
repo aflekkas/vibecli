@@ -2,13 +2,15 @@
 
 > Skip the AI CLI boilerplate
 
+[![My Skills](https://skillicons.dev/icons?i=ts,bun,react)](https://skillicons.dev)
+
 Reusable Ink + AI SDK primitives for vibecoded CLIs. Extracted from [rawdog](https://github.com/aflekkas/rawdog).
 
-## Status
+## 🧭 Status
 
 Pre-alpha. API will move. Used in production by rawdog.
 
-## Install
+## 📦 Install
 
 ```bash
 bun add vibecli
@@ -16,9 +18,9 @@ bun add vibecli
 npm install vibecli
 ```
 
-vibecli declares peer dependencies on `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`, `ink`, and `react` — install whichever your CLI uses.
+vibecli declares peer dependencies on `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`, `ink`, and `react`, install whichever your CLI uses.
 
-## What's in here
+## 🧰 What's in here
 
 | Subpath | Purpose |
 |---|---|
@@ -30,7 +32,7 @@ vibecli declares peer dependencies on `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai
 | `vibecli/providers` | Generic `Message` / `ContentBlock` / `Provider` / `ToolDef` types |
 | `vibecli/providers/adapter` | Vercel AI SDK adapter (`AiSdkProvider`) |
 
-## Example
+## 🚀 Usage
 
 ```ts
 import { TextInput } from "vibecli/text-input";
@@ -45,11 +47,11 @@ class MyProvider extends AiSdkProvider {
 }
 ```
 
-## Boundary
+## 🚧 Boundary
 
-Code here must be generic. No app-specific provider names, config paths, slash commands, or tool names. If a feature needs app context, accept it via params — never inline it here.
+Code here must be generic. No app-specific provider names, config paths, slash commands, or tool names. If a feature needs app context, accept it via params, never inline it here.
 
-## Local development
+## 🔧 Local development
 
 ```bash
 bun install
@@ -68,6 +70,6 @@ bun link vibecli
 
 Unlink and bump version when you ship.
 
-## License
+## 📄 License
 
 MIT
