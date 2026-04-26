@@ -46,7 +46,8 @@
     "./markdown-dir": "./src/markdown-dir.ts",
     "./scenarios": "./src/scenarios.ts",
     "./chat": "./src/chat.tsx",
-    "./models": "./src/models.tsx"
+    "./models": "./src/models.tsx",
+    "./slash": "./src/commands/slash.ts"
   },
   "files": [
     "bin",

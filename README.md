@@ -84,6 +84,7 @@ Use subpath imports for focused code. The root package also re-exports the curre
 | `@aflekkas/vibecli/themes` | Built-in theme registry (`pink`, `ocean`, `matrix`, `amber`, `claude`, `mono`) plus `defineTheme({ accent, ... })` to author your own |
 | `@aflekkas/vibecli/theme-picker` | `<ThemePicker>` Ink widget for live theme switching — arrow keys, enter, esc |
 | `@aflekkas/vibecli/commands` | `DEFAULT_RESERVED` slash-command names (`help`, `clear`, `new`, `exit`, `quit`, `restart`, `paste`) plus `extendReserved(...sets)` to merge in your own |
+| `@aflekkas/vibecli/slash` | `createSlashRegistry().add(name, handler, description?).dispatch(input) → "handled" \| "unknown" \| "not-slash"` — chainable slash-command builder with `help()` line generator |
 | `@aflekkas/vibecli/frontmatter` | `parseFrontmatter()` for `---\nkey: value\n---` markdown headers, plus `parseBool` and `deriveDescription` helpers |
 | `@aflekkas/vibecli/markdown-dir` | `loadMarkdownDir<T>()` — walks one or more dirs of `.md` files (or `dir/SKILL.md`-style entrypoints), parses each via your `parseEntry`, dedupes by name, skips reserved names |
 | `@aflekkas/vibecli/providers` | Generic `Message`, `ContentBlock`, `ToolDef`, `Provider`, `StreamEvent` types you build against |

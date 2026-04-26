@@ -124,6 +124,8 @@ export type {
   LoadMarkdownDirOptions,
 } from "./markdown-dir.ts";
 export { DEFAULT_RESERVED, extendReserved } from "./commands/reserved.ts";
+export { createSlashRegistry } from "./commands/slash.ts";
+export type { SlashEntry, SlashHandler, SlashRegistry } from "./commands/slash.ts";
 export { createAgent } from "./agent.ts";
 export type {
   Agent,
