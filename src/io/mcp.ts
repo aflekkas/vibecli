@@ -1,4 +1,4 @@
-import type { ToolDef } from "./providers/types.ts";
+import type { ToolDef } from "../providers/types.ts";
 
 export type JsonObjectSchema = {
   type: "object";

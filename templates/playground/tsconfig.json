@@ -31,6 +31,13 @@
       "@aflekkas/vibecli/checkpoints": ["../../src/agent/checkpoints.ts"],
       "@aflekkas/vibecli/settings": ["../../src/config/settings.ts"],
       "@aflekkas/vibecli/permissions": ["../../src/config/permissions.tsx"],
+      "@aflekkas/vibecli/clipboard": ["../../src/io/clipboard.ts"],
+      "@aflekkas/vibecli/lsp": ["../../src/io/lsp.ts"],
+      "@aflekkas/vibecli/mcp": ["../../src/io/mcp.ts"],
+      "@aflekkas/vibecli/repo-map": ["../../src/io/repo-map.ts"],
+      "@aflekkas/vibecli/status-line": ["../../src/io/status-line.ts"],
+      "@aflekkas/vibecli/frontmatter": ["../../src/io/frontmatter.ts"],
+      "@aflekkas/vibecli/markdown-dir": ["../../src/io/markdown-dir.ts"],
       "@aflekkas/vibecli/*": ["../../src/*"]
     }
   },

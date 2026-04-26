@@ -12,8 +12,8 @@ export {
   readClipboardImage,
   extractImagePaths,
   writeTempImage,
-} from "./clipboard.ts";
-export type { TempImageOptions } from "./clipboard.ts";
+} from "./io/clipboard.ts";
+export type { TempImageOptions } from "./io/clipboard.ts";
 export { defaultHighlightTheme, highlight } from "./ui/highlight.ts";
 export type { HighlightOptions, HighlightTheme } from "./ui/highlight.ts";
 export {
@@ -67,14 +67,14 @@ export {
   offsetAt,
   rangeAt,
   textInRange,
-} from "./lsp.ts";
-export type { LspPosition, LspRange, LspLocation } from "./lsp.ts";
+} from "./io/lsp.ts";
+export type { LspPosition, LspRange, LspLocation } from "./io/lsp.ts";
 export {
   mcpToolToToolDef,
   mcpToolsToToolDefs,
   toolDefToMcpTool,
   mcpResultToText,
-} from "./mcp.ts";
+} from "./io/mcp.ts";
 export type {
   JsonObjectSchema,
   McpTool,
@@ -84,20 +84,20 @@ export type {
   McpEmbeddedResource,
   McpContent,
   McpToolResult,
-} from "./mcp.ts";
+} from "./io/mcp.ts";
 export {
   buildRepoMap,
   languageForPath,
   classifyRepoFile,
   summarizeRepoMap,
-} from "./repo-map.ts";
-export type { RepoFileKind, RepoMapFile, RepoMap, RepoMapOptions } from "./repo-map.ts";
+} from "./io/repo-map.ts";
+export type { RepoFileKind, RepoMapFile, RepoMap, RepoMapOptions } from "./io/repo-map.ts";
 export {
   firstStatusLine,
   runStatusLineCommand,
   truncateStatusLine,
-} from "./status-line.ts";
-export type { StatusLineCommandOptions, StatusLinePayload } from "./status-line.ts";
+} from "./io/status-line.ts";
+export type { StatusLineCommandOptions, StatusLinePayload } from "./io/status-line.ts";
 export { Picker } from "./ui/picker.tsx";
 export type { PickerItem, PickerProps } from "./ui/picker.tsx";
 export type {
@@ -115,14 +115,14 @@ export { defineTheme, themes, themeNames, isThemeName } from "./ui/themes.ts";
 export type { DefineThemeInput, ThemeName } from "./ui/themes.ts";
 export { ThemePicker } from "./ui/theme-picker.tsx";
 export type { ThemePickerProps } from "./ui/theme-picker.tsx";
-export { parseFrontmatter, parseBool, deriveDescription } from "./frontmatter.ts";
-export type { Frontmatter } from "./frontmatter.ts";
-export { loadMarkdownDir } from "./markdown-dir.ts";
+export { parseFrontmatter, parseBool, deriveDescription } from "./io/frontmatter.ts";
+export type { Frontmatter } from "./io/frontmatter.ts";
+export { loadMarkdownDir } from "./io/markdown-dir.ts";
 export type {
   LoadDirEntry,
   LoadEntryContext,
   LoadMarkdownDirOptions,
-} from "./markdown-dir.ts";
+} from "./io/markdown-dir.ts";
 export { DEFAULT_RESERVED, extendReserved } from "./commands/reserved.ts";
 export { createSlashRegistry } from "./commands/slash.ts";
 export type { SlashEntry, SlashHandler, SlashRegistry } from "./commands/slash.ts";
