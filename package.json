@@ -10,7 +10,7 @@
     "url": "git+https://github.com/aflekkas/vibecli.git"
   },
   "bin": {
-    "vibecli": "./src/cli.ts"
+    "vibecli": "./bin/vibecli"
   },
   "keywords": [
     "ink",
@@ -39,6 +39,7 @@
     "./providers/adapter": "./src/providers/adapter.ts"
   },
   "files": [
+    "bin",
     "src",
     "docs",
     "README.md"
