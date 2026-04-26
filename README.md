@@ -75,6 +75,9 @@ Use subpath imports for focused code. The root package also re-exports the curre
 | `@aflekkas/vibecli/picker` | `<Picker>` Ink component — paginated, single-line-per-item modal menu with title, optional subtitle, descriptions, hints, page indicator, and footer |
 | `@aflekkas/vibecli/themes` | Built-in theme registry (`pink`, `ocean`, `matrix`, `amber`, `claude`, `mono`) plus `defineTheme({ accent, ... })` to author your own |
 | `@aflekkas/vibecli/theme-picker` | `<ThemePicker>` Ink widget for live theme switching — arrow keys, enter, esc |
+| `@aflekkas/vibecli/commands` | `DEFAULT_RESERVED` slash-command names (`help`, `clear`, `new`, `exit`, `quit`, `restart`, `paste`) plus `extendReserved(...sets)` to merge in your own |
+| `@aflekkas/vibecli/frontmatter` | `parseFrontmatter()` for `---\nkey: value\n---` markdown headers, plus `parseBool` and `deriveDescription` helpers |
+| `@aflekkas/vibecli/markdown-dir` | `loadMarkdownDir<T>()` — walks one or more dirs of `.md` files (or `dir/SKILL.md`-style entrypoints), parses each via your `parseEntry`, dedupes by name, skips reserved names |
 | `@aflekkas/vibecli/providers` | Generic `Message`, `ContentBlock`, `ToolDef`, `Provider`, `StreamEvent` types you build against |
 | `@aflekkas/vibecli/providers/adapter` | `AiSdkProvider`, Vercel AI SDK adapter wired for Anthropic prompt caching, adaptive thinking, and OpenAI prompt-cache keys |
 | `@aflekkas/vibecli/agent` | `createAgent(provider, system, opts)` — provider-agnostic stream loop with tool execution, abort handling, tool-result truncation, optional auto-compaction, and lifecycle hooks |
@@ -303,6 +306,46 @@ More docs:
 
 - [`docs/configuration.md`](docs/configuration.md)
 - [`docs/cli.md`](docs/cli.md)
+
+### 📂 Slash commands from a markdown directory
+
+Compose `markdown-dir`, `frontmatter`, and `commands` to load user/project slash commands from `.md` files. The loader is generic over `T` — you pick the shape and write the per-entry parser.
+
+```ts
+import { loadMarkdownDir } from "@aflekkas/vibecli/markdown-dir";
+import { parseFrontmatter, deriveDescription, parseBool } from "@aflekkas/vibecli/frontmatter";
+import { DEFAULT_RESERVED, extendReserved } from "@aflekkas/vibecli/commands";
+
+type SlashCommand = {
+  name: string;
+  description: string;
+  body: string;
+  enabled: boolean;
+  source: string;
+};
+
+const commands = loadMarkdownDir<SlashCommand>({
+  dirs: [
+    { dir: `${process.env.HOME}/.myapp/commands`, source: "user" },
+    { dir: `${process.cwd()}/.myapp/commands`, source: "project" },
+  ],
+  reserved: extendReserved(DEFAULT_RESERVED, ["foo", "bar"]),
+  parseEntry: (raw, ctx) => {
+    const fm = parseFrontmatter(raw);
+    const data = fm?.data ?? {};
+    const body = fm?.body ?? raw;
+    return {
+      name: data.name ?? ctx.name,
+      description: data.description ?? deriveDescription(body),
+      body,
+      enabled: parseBool(data.enabled, true),
+      source: ctx.path,
+    };
+  },
+});
+```
+
+Project-source dirs override user-source dirs by name (later entries in `dirs` win). Pass `mode: "dir"` + `dirEntrypoint: "SKILL.md"` to load Claude-Code-style `commands/<name>/SKILL.md` layouts instead of flat files.
 
 ## 🚧 Boundary
 

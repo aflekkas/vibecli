@@ -115,6 +115,15 @@ export { defineTheme, themes, themeNames, isThemeName } from "./themes.ts";
 export type { DefineThemeInput, ThemeName } from "./themes.ts";
 export { ThemePicker } from "./theme-picker.tsx";
 export type { ThemePickerProps } from "./theme-picker.tsx";
+export { parseFrontmatter, parseBool, deriveDescription } from "./frontmatter.ts";
+export type { Frontmatter } from "./frontmatter.ts";
+export { loadMarkdownDir } from "./markdown-dir.ts";
+export type {
+  LoadDirEntry,
+  LoadEntryContext,
+  LoadMarkdownDirOptions,
+} from "./markdown-dir.ts";
+export { DEFAULT_RESERVED, extendReserved } from "./commands/reserved.ts";
 export { createAgent } from "./agent.ts";
 export type {
   Agent,

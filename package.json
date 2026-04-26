@@ -40,7 +40,10 @@
     "./providers/adapter": "./src/providers/adapter.ts",
     "./agent": "./src/agent.ts",
     "./themes": "./src/themes.ts",
-    "./theme-picker": "./src/theme-picker.tsx"
+    "./theme-picker": "./src/theme-picker.tsx",
+    "./commands": "./src/commands/reserved.ts",
+    "./frontmatter": "./src/frontmatter.ts",
+    "./markdown-dir": "./src/markdown-dir.ts"
   },
   "files": [
     "bin",
