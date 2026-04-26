@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Text, render, useApp, useInput } from "ink";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -14,6 +14,7 @@ import { runScenario, type ScenarioStep } from "@aflekkas/vibecli/scenarios";
 import { createCheckpointHistory } from "@aflekkas/vibecli/checkpoints";
 import { useAgentStream, MessageList } from "@aflekkas/vibecli/chat";
 import { defineModel, ModelPicker } from "@aflekkas/vibecli/models";
+import { createSlashRegistry } from "@aflekkas/vibecli/slash";
 import type { ContentBlock, Message, Provider } from "@aflekkas/vibecli/providers";
 import { readFile } from "node:fs/promises";
 import { buildTools } from "./tools.ts";
@@ -57,18 +58,6 @@ async function runScenarioFromFile(scriptPath: string, provider: Provider): Prom
   const r = await runScenario(agent, steps);
   process.exit(r.failed > 0 ? 1 : 0);
 }
-
-const HELP_TEXT = [
-  "/model   switch model (router across configured providers)",
-  "/theme   switch theme",
-  "/clip    attach clipboard image to next message (macOS)",
-  "/undo    revert last turn (uses checkpoint history)",
-  "/redo    re-apply an undone turn",
-  "/tools   list available tools",
-  "/clear   reset conversation",
-  "/help    show commands",
-  "(esc cancels in-flight generation; empty submit exits)",
-].join("\n");
 
 function Chat({
   themeName,
@@ -132,59 +121,11 @@ function Chat({
     await sendStream(blocks);
   }
 
-  async function handleSlash(cmd: string) {
-    if (cmd === "/theme") {
-      setPicking("theme");
-      return;
-    }
-    if (cmd === "/model") {
-      setPicking("model");
-      return;
-    }
-    if (cmd === "/help") {
-      pushMeta(HELP_TEXT);
-      return;
-    }
-    if (cmd === "/clear") {
-      const current = MODELS.find((m) => m.id === modelId) ?? MODELS[0]!;
-      setAgent(createAgent(current.build(), SYSTEM_PROMPT, { tools: toolsRef.current }));
-      historyRef.current.clear([]);
-      reset();
-      setPendingImage(null);
-      pushMeta("conversation reset.");
-      return;
-    }
-    if (cmd === "/tools") {
-      pushMeta("tools:\n" + toolsRef.current.map((t) => `  ${t.def.name}  ${t.def.description}`).join("\n"));
-      return;
-    }
-    if (cmd === "/undo") {
-      if (!agent) return;
-      if (!historyRef.current.canUndo) {
-        pushMeta("nothing to undo.");
-        return;
-      }
-      const prev = historyRef.current.undo();
-      if (prev) {
-        agent.state.messages = prev.value.slice();
-        setTurns((t) => t.filter((x) => x.role === "meta").concat({ role: "meta", text: "undone." }));
-      }
-      return;
-    }
-    if (cmd === "/redo") {
-      if (!agent) return;
-      if (!historyRef.current.canRedo) {
-        pushMeta("nothing to redo.");
-        return;
-      }
-      const next = historyRef.current.redo();
-      if (next) {
-        agent.state.messages = next.value.slice();
-        pushMeta("redone.");
-      }
-      return;
-    }
-    if (cmd === "/clip") {
+  const slash = useMemo(() => {
+    const r = createSlashRegistry();
+    r.add("model", () => setPicking("model"), "switch model (router across configured providers)");
+    r.add("theme", () => setPicking("theme"), "switch theme");
+    r.add("clip", async () => {
       const img = await readClipboardImage();
       if (!img) {
         pushMeta("no image on clipboard (or not macOS).");
@@ -192,10 +133,41 @@ function Chat({
       }
       setPendingImage(img);
       pushMeta(`clipboard image staged (${img.mediaType}, ${img.data.length} base64 chars). Send a message to attach.`);
-      return;
-    }
-    pushMeta(`unknown command: ${cmd}. Try /help.`);
-  }
+    }, "attach clipboard image to next message (macOS)");
+    r.add("undo", () => {
+      if (!agent) return;
+      if (!historyRef.current.canUndo) return pushMeta("nothing to undo.");
+      const prev = historyRef.current.undo();
+      if (prev) {
+        agent.state.messages = prev.value.slice();
+        setTurns((t) => t.filter((x) => x.role === "meta").concat({ role: "meta", text: "undone." }));
+      }
+    }, "revert last turn (uses checkpoint history)");
+    r.add("redo", () => {
+      if (!agent) return;
+      if (!historyRef.current.canRedo) return pushMeta("nothing to redo.");
+      const next = historyRef.current.redo();
+      if (next) {
+        agent.state.messages = next.value.slice();
+        pushMeta("redone.");
+      }
+    }, "re-apply an undone turn");
+    r.add("tools", () => {
+      pushMeta("tools:\n" + toolsRef.current.map((t) => `  ${t.def.name}  ${t.def.description}`).join("\n"));
+    }, "list available tools");
+    r.add("clear", () => {
+      const current = MODELS.find((m) => m.id === modelId) ?? MODELS[0]!;
+      setAgent(createAgent(current.build(), SYSTEM_PROMPT, { tools: toolsRef.current }));
+      historyRef.current.clear([]);
+      reset();
+      setPendingImage(null);
+      pushMeta("conversation reset.");
+    }, "reset conversation");
+    r.add("help", () => {
+      pushMeta(r.help() + "\n(esc cancels in-flight generation; empty submit exits)");
+    }, "show commands");
+    return r;
+  }, [agent, modelId, pushMeta, reset, setTurns]);
 
   return (
     <Box flexDirection="column" gap={1}>
@@ -239,19 +211,21 @@ function Chat({
           onChange={setInput}
           placeholder={busy ? "thinking..." : "ask anything (try /help)"}
           tabText="  "
-          onSubmit={(text) => {
+          onSubmit={async (text) => {
             const trimmed = text.trim();
             if (!trimmed) {
               exit();
               return;
             }
-            if (trimmed.startsWith("/")) {
-              setInput("");
-              void handleSlash(trimmed);
+            setInput("");
+            const result = await slash.dispatch(trimmed);
+            if (result === "unknown") {
+              pushMeta(`unknown command: ${trimmed}. Try /help.`);
               return;
             }
-            setInput("");
-            void send(trimmed);
+            if (result === "not-slash") {
+              void send(trimmed);
+            }
           }}
         />
       )}
