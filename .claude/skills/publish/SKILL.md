@@ -50,7 +50,7 @@ Defined in `package.json`:
 - **npm propagation lag.** New publishes take 30s–2min to be globally readable. The smoke step's `bunx @aflekkas/vibecli@<just-published>` may 404 immediately after publish. Wait + retry once.
 - **Bun cache.** Bun caches scoped registry responses aggressively. If the smoke `bun install` returns 404 for the just-published version: `rm -rf ~/.bun/install/cache && bun install --force` and retry the smoke.
 - **NPM token in `~/.npmrc`.** Granular access token. If publish fails with EOTP/403, the token expired or was revoked. Never paste it into code, env, or memory files.
-- **`ANTHROPIC_API_KEY` in env.** Smoke scenarios hit the real provider. Without the key, smoke skips and exits 0 — which means a passing ship script does NOT prove scenarios ran. Set the key locally before shipping if you want full coverage.
+- **`OPENAI_API_KEY` in env.** Smoke scenarios hit the real provider. Without the key, smoke skips and exits 0 — which means a passing ship script does NOT prove scenarios ran. Set the key locally before shipping if you want full coverage.
 
 ## Hard rules
 

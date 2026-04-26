@@ -184,7 +184,7 @@ async function main() {
     process.stdout.write(`  ${file.action} ${file.path}\n`);
   }
   const dev = result.packageManager === "bun" ? "bun run dev" : "npm run dev";
-  process.stdout.write(`\nNext:\n  cd ${result.dir}\n  cp .env.example .env  # paste ANTHROPIC_API_KEY\n  ${dev}\n  (type \`/theme\` inside the running app to switch themes)\n`);
+  process.stdout.write(`\nNext:\n  cd ${result.dir}\n  cp .env.example .env  # paste your provider API key(s)\n  ${dev}\n  (type \`/model\` to switch models, \`/theme\` to switch themes)\n`);
   if (!result.installed) {
     const install = result.packageManager === "bun" ? "bun install" : "npm install";
     process.stdout.write(`  (run \`${install}\` first — skipped via --no-install)\n`);

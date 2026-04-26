@@ -49,6 +49,8 @@ export type Agent = {
   ) => AsyncGenerator<AgentEvent>;
   state: AgentState;
   setSystem: (s: string) => void;
+  setProvider: (p: Provider) => void;
+  getProvider: () => Provider;
 };
 
 type CompactOpts = {
@@ -140,9 +142,10 @@ function truncateOldToolResults(messages: Message[], keep: number): number {
   return count;
 }
 
-export function createAgent(provider: Provider, system: string, opts: AgentOptions = {}): Agent {
+export function createAgent(initialProvider: Provider, system: string, opts: AgentOptions = {}): Agent {
   const state: AgentState = { messages: [] };
   let currentSystem = system;
+  let provider = initialProvider;
   const tools = opts.tools ?? [];
   const toolDefs: ToolDef[] = tools.map((t) => t.def);
   const toolMap: Record<string, ToolHandler> = Object.fromEntries(tools.map((t) => [t.def.name, t.run]));
@@ -292,5 +295,13 @@ export function createAgent(provider: Provider, system: string, opts: AgentOptio
     currentSystem = s;
   }
 
-  return { send, state, setSystem };
+  function setProvider(p: Provider) {
+    provider = p;
+  }
+
+  function getProvider(): Provider {
+    return provider;
+  }
+
+  return { send, state, setSystem, setProvider, getProvider };
 }

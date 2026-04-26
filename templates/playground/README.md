@@ -2,18 +2,19 @@
 
 Ink + AI SDK agent CLI scaffolded with vibecli (template: `playground`).
 
-The playground is the kitchen-sink template: it wires up a working chat against `claude-sonnet-4-5`, plus slash commands that demonstrate vibecli primitives (theming, clipboard image paste, conversation reset). Strip out what you don't need; copy the patterns into your own app.
+The playground is the kitchen-sink template: it wires up a multi-model chat (OpenAI + Anthropic out of the box, switchable live via `/model`), plus slash commands that demonstrate vibecli primitives (theming, clipboard image paste, conversation reset). Strip out what you don't need; copy the patterns into your own app.
 
 ## Run
 
 ```bash
-cp .env.example .env  # then paste your ANTHROPIC_API_KEY
+cp .env.example .env  # paste OPENAI_API_KEY and/or ANTHROPIC_API_KEY (only the keys for models you'll use)
 bun install
 bun run dev
 ```
 
 ## Slash commands
 
+- `/model` — switch the active model live (router across configured providers)
 - `/theme` — switch theme live (uses `@aflekkas/vibecli/theme-picker`)
 - `/clip` — stage clipboard image for next message (uses `@aflekkas/vibecli/clipboard`)
 - `/clear` — reset the conversation
@@ -30,15 +31,24 @@ const SYSTEM_PROMPT = "You are a helpful CLI assistant. Be concise.";
 
 Edit it to give the agent a name, voice, rules, role. Swap at runtime with `agent.setSystem("new prompt")`.
 
-## Swap the model
+## Models
 
-The default is `claude-sonnet-4-5` via `@ai-sdk/anthropic`. Any Vercel AI SDK provider works. Three lines in `src/index.tsx`:
+The template ships with a `MODELS` registry in `src/index.tsx`. Each entry has an id, a provider name, and a `build()` thunk that returns a vibecli `Provider`. Type `/model` while running to switch live; the agent loop swaps providers between turns and keeps history.
 
-1. Install the provider: `bun add @ai-sdk/openai` (or `@ai-sdk/google`, `@ai-sdk/groq`, etc.)
-2. Replace the import: `import { openai } from "@ai-sdk/openai";`
-3. Update the `AiSdkProvider` constructor: change `name` to `"openai"`, `MODEL` to e.g. `"gpt-4.1"`, and `languageModel` to `openai(MODEL)`.
+Add a model by appending to the registry:
 
-Set the matching API key env var (`OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, etc.). The AI SDK reads these automatically.
+```ts
+import { google } from "@ai-sdk/google";  // bun add @ai-sdk/google first
+
+const MODELS = [
+  // ...existing entries
+  { id: "gemini-2.0-flash", providerName: "google", build: () => aiSdk("google", "gemini-2.0-flash", google) },
+];
+```
+
+Set the matching API key env var (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, etc.). The AI SDK reads these automatically.
+
+To change the default, edit `DEFAULT_MODEL_ID` to one of the registry ids.
 
 ## Add tools
 

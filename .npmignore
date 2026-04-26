@@ -1,0 +1,4 @@
+templates/playground/.env
+templates/playground/bun.lock
+templates/playground/node_modules
+templates/playground/scenarios

@@ -10,7 +10,7 @@
  *
  * Run via `bun run smoke` (or automatically as part of `bun run ship`).
  *
- * Requires ANTHROPIC_API_KEY in env.
+ * Requires OPENAI_API_KEY in env.
  */
 
 import { spawn } from "node:child_process";
@@ -56,8 +56,8 @@ async function listScenarios(): Promise<string[]> {
 }
 
 async function main(): Promise<void> {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    process.stderr.write("smoke: ANTHROPIC_API_KEY missing — skipping (export it to enable)\n");
+  if (!process.env.OPENAI_API_KEY) {
+    process.stderr.write("smoke: OPENAI_API_KEY missing — skipping (export it to enable)\n");
     process.exit(0);
   }
 

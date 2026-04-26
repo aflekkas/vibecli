@@ -23,7 +23,7 @@ Bootstrap a fresh Ink + AI SDK agent CLI, pre-wired to vibecli's primitives. Dep
 ```bash
 bunx @aflekkas/vibecli init my-cli
 cd my-cli
-cp .env.example .env  # paste your ANTHROPIC_API_KEY
+cp .env.example .env  # paste your OPENAI_API_KEY
 bun run dev
 ```
 
@@ -404,7 +404,7 @@ git add . && git commit -m "organize internals"
 bun run ship   # typecheck → version bump → npm publish → push tags → bun run smoke
 ```
 
-`bun run smoke` (`scripts/smoke.ts`) scaffolds the `playground` template into a tmpdir from the just-published version, real `bun install`, runs every scripted scenario in `templates/playground/scenarios/`, asserts pass. That's the integration test on every release. Set `ANTHROPIC_API_KEY` in env before shipping for full coverage; without it the smoke step skips silently.
+`bun run smoke` (`scripts/smoke.ts`) scaffolds the `playground` template into a tmpdir from the just-published version, real `bun install`, runs every scripted scenario in `templates/playground/scenarios/`, asserts pass. That's the integration test on every release. Set `OPENAI_API_KEY` in env before shipping for full coverage; without it the smoke step skips silently.
 
 ## 🗺️ Roadmap
 
