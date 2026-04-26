@@ -1,5 +1,5 @@
 import { jsonSchema, stepCountIs, streamText, tool, type LanguageModel, type ModelMessage } from "ai";
-import { withRetry, type RetryOpts } from "../../retry.ts";
+import { withRetry, type RetryOpts } from "../../agent/retry.ts";
 import type { Message, Provider, StreamEvent, ToolDef } from "../types.ts";
 import { findSecondToLastUserIdx, toModelMessages } from "./messages.ts";
 

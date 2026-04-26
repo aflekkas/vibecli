@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createAgent, type LifecycleEvent, type LifecycleContext, type LifecycleResult } from "./agent.ts";
-import type { Provider, StreamEvent, ToolDef } from "./providers/types.ts";
+import type { Provider, StreamEvent, ToolDef } from "../providers/types.ts";
 
 const noopToolDef: ToolDef = {
   name: "danger",

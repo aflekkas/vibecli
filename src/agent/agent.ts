@@ -1,4 +1,4 @@
-import type { ContentBlock, Message, Provider, ToolDef } from "./providers/types.ts";
+import type { ContentBlock, Message, Provider, ToolDef } from "../providers/types.ts";
 
 export type ToolHandler = (input: Record<string, unknown>) => Promise<string> | string;
 

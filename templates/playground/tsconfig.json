@@ -25,6 +25,10 @@
       "@aflekkas/vibecli/chat": ["../../src/ui/chat.tsx"],
       "@aflekkas/vibecli/models": ["../../src/ui/models.tsx"],
       "@aflekkas/vibecli/highlight": ["../../src/ui/highlight.ts"],
+      "@aflekkas/vibecli/agent": ["../../src/agent/agent.ts"],
+      "@aflekkas/vibecli/scenarios": ["../../src/agent/scenarios.ts"],
+      "@aflekkas/vibecli/retry": ["../../src/agent/retry.ts"],
+      "@aflekkas/vibecli/checkpoints": ["../../src/agent/checkpoints.ts"],
       "@aflekkas/vibecli/*": ["../../src/*"]
     }
   },

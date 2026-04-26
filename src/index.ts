@@ -48,8 +48,8 @@ export {
   GradientText,
 } from "./ui/ui.tsx";
 export type { GradientConfig, GradientTextProps, VibeTheme, VibeThemeInput } from "./ui/ui.tsx";
-export { withRetry } from "./retry.ts";
-export type { RetryOpts } from "./retry.ts";
+export { withRetry } from "./agent/retry.ts";
+export type { RetryOpts } from "./agent/retry.ts";
 export { createProjectSkeleton } from "./create-project.ts";
 export type {
   CreatedFile,
@@ -57,8 +57,8 @@ export type {
   CreateProjectResult,
   PackageManager,
 } from "./create-project.ts";
-export { CheckpointHistory, createCheckpointHistory } from "./checkpoints.ts";
-export type { Checkpoint, CheckpointHistoryOptions } from "./checkpoints.ts";
+export { CheckpointHistory, createCheckpointHistory } from "./agent/checkpoints.ts";
+export type { Checkpoint, CheckpointHistoryOptions } from "./agent/checkpoints.ts";
 export {
   pathToUri,
   uriToPath,
@@ -126,7 +126,7 @@ export type {
 export { DEFAULT_RESERVED, extendReserved } from "./commands/reserved.ts";
 export { createSlashRegistry } from "./commands/slash.ts";
 export type { SlashEntry, SlashHandler, SlashRegistry } from "./commands/slash.ts";
-export { createAgent } from "./agent.ts";
+export { createAgent } from "./agent/agent.ts";
 export type {
   Agent,
   AgentEvent,
@@ -138,14 +138,14 @@ export type {
   ToolEntry,
   ToolHandler,
   TurnUsage,
-} from "./agent.ts";
-export { runScenario, runScenarioFile } from "./scenarios.ts";
+} from "./agent/agent.ts";
+export { runScenario, runScenarioFile } from "./agent/scenarios.ts";
 export type {
   RunScenarioOptions,
   ScenarioFailure,
   ScenarioResult,
   ScenarioStep,
-} from "./scenarios.ts";
+} from "./agent/scenarios.ts";
 export { defineModel, ModelPicker } from "./ui/models.tsx";
 export type { ModelEntry, ModelPickerProps } from "./ui/models.tsx";
 export { MessageList, useAgentStream } from "./ui/chat.tsx";
