@@ -83,6 +83,15 @@ Use subpath imports for focused code. The root package also re-exports the curre
 | `@aflekkas/vibecli/agent` | `createAgent(provider, system, opts)` — provider-agnostic stream loop with tool execution, abort handling, tool-result truncation, optional auto-compaction, and lifecycle hooks |
 | `vibecli mcp` (bin subcommand) | Local stdio MCP server that wraps this package's README + `docs/*.md`. Plug into Claude Code so an agent can scaffold a vibecli CLI against the current API. See the **Docs MCP** section above. |
 
+## 📚 Docs
+
+Deeper material lives under [`docs/`](docs/). Browse from here, or point an MCP-capable agent at `bunx @aflekkas/vibecli mcp` to read the same content over the wire.
+
+| Page | What's in it |
+|---|---|
+| [`docs/cli.md`](docs/cli.md) | `vibecli init` flag-by-flag reference (theme, package manager, prompt + install toggles), `vibecli mcp` resources/tools, and local-smoke recipe. |
+| [`docs/configuration.md`](docs/configuration.md) | `VibeConfigProvider` shape, `<TextInput>` options, theme + gradient + role-message + loading defaults, highlighter ANSI overrides, `AiSdkProvider` per-provider knobs, and clipboard tempfile options. |
+
 ## 🚀 Usage
 
 Wrap a Vercel AI SDK model into a `Provider`:
@@ -301,11 +310,6 @@ const sunset = defineTheme({ accent: "#ff6b6b", secondary: "#feca57" });
 The `vibecli init` scaffolder prompts for a theme during setup (`--theme <name>` skips the prompt) and ships a `/theme` command in the generated app that opens `<ThemePicker>` for live switching.
 
 Direct props still win for one-off overrides. `GradientText` accepts `theme`, `gradient`, or `colorAt`; `TextInput` accepts `placeholder`, `placeholderColor`, and `options`; `highlight(markdown, { config, theme })` accepts the same config object plus ANSI token overrides.
-
-More docs:
-
-- [`docs/configuration.md`](docs/configuration.md)
-- [`docs/cli.md`](docs/cli.md)
 
 ### 📂 Slash commands from a markdown directory
 
