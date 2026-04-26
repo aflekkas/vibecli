@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@aflekkas/vibecli.svg)](https://www.npmjs.com/package/@aflekkas/vibecli)
 
-Building a TUI agent on Ink + the Vercel AI SDK means rewriting the same primitives every time: a text input that survives paste and cursor nav, clipboard image extraction, a markdown highlighter for streaming output, exponential backoff for flaky provider calls, and an SDK adapter that knows about Anthropic prompt caching. vibecli is the layer [rawdog](https://github.com/aflekkas/rawdog) factored out so the next vibecoded CLI starts at minute zero, not minute thirty.
+Building a TUI agent on Ink + the Vercel AI SDK means rewriting the same primitives every time: a text input that survives paste and cursor nav, clipboard image extraction, a markdown highlighter for streaming output, exponential backoff for flaky provider calls, and an SDK adapter that knows about Anthropic prompt caching. vibecli is the layer factored out so the next vibecoded CLI starts at minute zero, not minute thirty.
 
 Pre-alpha. The API will move, pin a version and expect breakage on minor bumps.
 
@@ -361,9 +361,9 @@ Project-source dirs override user-source dirs by name (later entries in `dirs` w
 
 ## 🚧 Boundary
 
-Code here is generic on purpose. The adapter inspects `"anthropic"` / `"openai"` strings to wire provider-specific options (cache control, prompt-cache keys, adaptive thinking), but nothing else app-specific belongs here: no runtime artifact paths (`.rawdog/`, `.foocli/`), no specific tool names, no slash commands, no imports from any consumer. If a feature needs app context, take it as a constructor arg, function param, or React prop.
+Code in `src/` is generic on purpose. The adapter inspects `"anthropic"` / `"openai"` strings to wire provider-specific options (cache control, prompt-cache keys, adaptive thinking), but nothing else app-specific belongs there: no runtime artifact paths, no specific tool names, no slash commands, no imports from any consumer. If a feature needs app context, take it as a constructor arg, function param, or React prop.
 
-Promotion to vibecli later is cheap. Demotion after publish is an API break. When in doubt, build it in the consumer first.
+The boundary applies to `src/` only. `examples/playground/` is the in-tree consumer — opinionated wiring, slash commands, demo flows live there. Promotion from the playground into `src/` is cheap. Demotion after publish is an API break. When in doubt, build it in the playground first.
 
 ## 🔧 Local development
 
@@ -374,21 +374,29 @@ bun run typecheck
 
 This repo is itself built with a small claude-code-native stack — agents, skills, and slash commands live under [`.claude/`](.claude/) and `CLAUDE.md` orchestrates them. Open the directory if you're curious how the package is iterated on day to day.
 
-No test suite yet. Verify changes by type-checking here, then shipping a real npm version and exercising rawdog (the canonical consumer):
+vibecli has its own canonical consumer in-tree at `examples/playground/`. It resolves `@aflekkas/vibecli/*` to local `src/*` via tsconfig paths, so edits to `src/` show up next run with no install or symlink dance. Run it interactively or scripted:
+
+```bash
+bun run play                                          # interactive Ink chat against local src/
+bun run play:script examples/playground/scenarios/<name>.json  # non-interactive, asserts assistant text
+```
+
+Verifying a release end-to-end:
 
 ```bash
 bun run typecheck
-git add . && git commit -m "Organize internals"
-bun run ship
+git add . && git commit -m "organize internals"
+bun run ship   # typecheck → version bump → npm publish → push tags → bun run smoke
 ```
 
-rawdog intentionally consumes only the published package, so integration failures match what another consumer would see.
+`bun run smoke` (`scripts/smoke.ts`) scaffolds the `playground` template into a tmpdir from the just-published version, real `bun install`, runs every scripted scenario in `examples/playground/scenarios/`, asserts pass. That's the integration test on every release. Set `ANTHROPIC_API_KEY` in env before shipping for full coverage; without it the smoke step skips silently.
 
 ## 🗺️ Roadmap
 
 - **More built-in templates.** `playground` is the only template today. Future built-ins might include a minimal "barebones" starter, an MCP-server-first template, a tools-heavy template, etc. Built-ins ship inside the npm package under `templates/<name>/`.
 - **Community / external templates.** `vibecli init --template <name>` will eventually resolve unknown names against a curated index (and/or `--template <github-user/repo>` for arbitrary git sources). The internal contract is already directory-shaped, so the surface to add is just resolution + caching.
-- **Playground as canonical pre-release smoke target.** The testing agent is being moved off the "smoke rawdog" hook and onto "scaffold the playground, drive scripted scenarios". Playground gains `--script` non-interactive mode + scenario files for matrix testing.
+- **Public `vibecli play` subcommand.** Today `bun run play` is a vibecli-internal dev script. A future `vibecli play [--template <name>]` would let consumers scaffold-and-run a template from any project against their installed version.
+- **Headless UI scenarios.** Scripted scenarios cover the agent loop today. A future `--script-ui` mode (likely on top of `ink-testing-library`) would also exercise visual layout, slash-command UX, and theme switching non-interactively.
 
 ## 📄 License
 

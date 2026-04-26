@@ -1,5 +1,5 @@
 ---
-description: One-shot release pipeline for `@aflekkas/vibecli`. Wires new exports, syncs docs, audits the boundary, commits, then runs /publish (npm version + publish + push tags + smoke rawdog). Handles a dirty tree end-to-end. Auto-fire on "ship it", "ship everything", "ship this", "ship the release", "publish everything", "cut a release", "release it", "let's ship", or `/ship`. Default bump is patch during 0.0.x.
+description: One-shot release pipeline for `@aflekkas/vibecli`. Wires new exports, syncs docs, audits the boundary, commits, then runs /publish (npm version + publish + push tags + post-publish smoke). Handles a dirty tree end-to-end. Auto-fire on "ship it", "ship everything", "ship this", "ship the release", "publish everything", "cut a release", "release it", "let's ship", or `/ship`. Default bump is patch during 0.0.x.
 argument-hint: [patch|minor|major]
 ---
 
@@ -14,6 +14,7 @@ Run sequentially. Stop and surface on any failure — never bypass.
 1. **Survey.** `git status`, `git diff`, `git diff --cached`. Identify:
    - new files in `src/` that may need a `package.json` `exports` subpath
    - any modified public API surface
+   - new public exports that should be wired into `examples/playground/` and `templates/playground/`
    - anything outside `src/` that should be excluded from a release commit (stale CLAUDE.md edits, scratch files, etc.)
 
 2. **Exports + README parity.** If any new `src/*.ts`/`src/*.tsx` module is missing from `package.json` `exports`, or any export was renamed/removed, delegate to the `documentation` agent. It must:
@@ -22,15 +23,17 @@ Run sequentially. Stop and surface on any failure — never bypass.
    - add a usage example using the scoped name `@aflekkas/vibecli/<subpath>`
    Skip this step only if the diff is purely internal (no new public surface).
 
-3. **Boundary check.** Delegate to `boundary-reviewer` on the unstaged + staged diff. Hard fail on hardcoded provider names outside `src/providers/adapter/`, runtime artifact paths, consumer tool names, or imports from any consumer. If it flags a leak, hand to `refactoring` before continuing — do not commit through it.
+3. **Playground parity.** If the change adds a public export reachable from the agent loop, confirm `examples/playground/src/index.tsx` exercises it and at least one scenario in `examples/playground/scenarios/` covers it. If not, delegate to `testing` to wire and add a scenario.
 
-4. **Typecheck.** `bun run typecheck`. Fail fast.
+4. **Boundary check.** Delegate to `boundary-reviewer` on the unstaged + staged diff. Hard fail on hardcoded provider names outside `src/providers/adapter/`, runtime artifact paths, consumer tool names, or imports from any consumer (including `examples/playground/` reaching back into `src/`). If it flags a leak, hand to `refactoring` before continuing — do not commit through it.
 
-5. **Commit.** Delegate to the `git` agent with hint "infer from the diff". One commit, short imperative lowercase, single behavioral change. Never combine with the auto-bump commit that `npm version` makes — that comes next.
+5. **Typecheck.** `bun run typecheck`. Fail fast.
 
-6. **Publish.** Invoke the `publish` skill with the chosen bump. It runs `bun run ship` (or `:minor`/`:major`), which does typecheck → `npm version` → `npm publish` → `git push --follow-tags` → `cd ../rawdog && bun add @aflekkas/vibecli@latest && bun run typecheck`.
+6. **Commit.** Delegate to the `git` agent with hint "infer from the diff". One commit, short imperative lowercase, single behavioral change. Never combine with the auto-bump commit that `npm version` makes — that comes next.
 
-7. **Report.** New version, rawdog typecheck status, any propagation/cache issues. If rawdog typecheck fails post-bump, surface immediately — that's a real API break needing a forward fix or revert patch.
+7. **Publish.** Invoke the `publish` skill with the chosen bump. It runs `bun run ship` (or `:minor`/`:major`), which does typecheck → `npm version` → `npm publish` → `git push --follow-tags` → `bun run smoke` (post-publish tmpdir scaffold + scripted scenarios against the just-published version).
+
+8. **Report.** New version, smoke outcome, any propagation/cache issues. If smoke fails post-bump, surface immediately — that's a packaging or exports break needing a forward fix or revert patch.
 
 ## Hard rules
 

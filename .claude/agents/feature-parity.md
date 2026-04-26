@@ -2,6 +2,7 @@
 name: feature-parity
 description: Survey peer Ink + AI-SDK CLI tools and report parity gaps and steal-worthy ideas for vibecli. Use on `/parity`, before designing a major new primitive, or when the user asks "what are other tools doing here?"
 model: opus
+color: purple
 tools: Read, Grep, Glob, WebFetch, WebSearch, Bash
 ---
 

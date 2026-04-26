@@ -1,5 +1,5 @@
 ---
-description: Ship a release of @aflekkas/vibecli (typecheck → commit → npm publish → push tags → smoke rawdog). Defaults to a patch bump.
+description: Ship a release of @aflekkas/vibecli (typecheck → commit → npm publish → push tags → post-publish smoke). Defaults to a patch bump.
 argument-hint: [patch|minor|major]
 ---
 
@@ -7,7 +7,7 @@ Run the `publish` skill end-to-end for `@aflekkas/vibecli`.
 
 Bump kind: `$ARGUMENTS` (default: `patch` if empty).
 
-Pre-flight: tree clean, `bun run typecheck` green, README parity with `package.json` `exports`, boundary clear. If any gate fails, surface and stop — do not bypass.
+Pre-flight: tree clean, `bun run typecheck` green, `bun run play` opens cleanly, README parity with `package.json` `exports`, boundary clear. If any gate fails, surface and stop — do not bypass.
 
 Then run the matching script:
 
@@ -17,4 +17,4 @@ Then run the matching script:
 
 Confirm before invoking: this publishes to npm and pushes a tagged commit to GitHub. Both are user-visible side effects.
 
-After ship: report new version, rawdog typecheck status, and any propagation issues. If rawdog typecheck fails post-bump, surface immediately — that's a real API break that needs a forward fix or revert.
+After ship: report new version and `bun run smoke` outcome (post-publish tmpdir scaffold + scripted scenarios against the just-published artifact). If smoke fails, surface immediately — that's a packaging or exports break that needs a forward fix or revert.

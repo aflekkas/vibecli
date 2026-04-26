@@ -1,11 +1,11 @@
 ---
 name: post-feature-audit
-description: Comprehensive sweep after a big feature lands — file decomposition, boundary integrity, exports parity, README parity, type-check, dead code. Triggers on `/audit`, "post-feature audit", "audit the system", "make sure everything is broken apart", or after merging a non-trivial change.
+description: Comprehensive sweep after a big feature lands — file decomposition, boundary integrity, exports parity, README parity, type-check, dead code, playground integration. Triggers on `/audit`, "post-feature audit", "audit the system", "make sure everything is broken apart", or after merging a non-trivial change.
 ---
 
 # Post-feature audit
 
-Run this after any feature large enough that the codebase shifted shape. The goal is to make sure the new state is **broken apart** — small focused modules, no monoliths creeping back, the boundary held, public surface still consistent.
+Run this after any feature large enough that the codebase shifted shape. The goal is to make sure the new state is **broken apart** — small focused modules, no monoliths creeping back, the boundary held, public surface still consistent, the playground still exercises everything.
 
 ## Stages
 
@@ -51,10 +51,16 @@ If anything fails, hand to `documentation`.
 - `docs/*.md` references valid.
 - JSDoc on new exported APIs covers the *why*.
 
-### 7. Consumer integration
+### 7. Playground + scenario coverage
 
-- Rawdog typecheck passes against the (about-to-be-shipped) version.
-- Smoke run rawdog: `cd ~/Documents/Projects/rawdog && echo "say hi" | bun run src/index.tsx -p`.
+- `examples/playground/src/index.tsx` imports any new public export the feature added (or has a clear reason it shouldn't, e.g. low-level helper not meant for the demo surface).
+- `templates/playground/src/index.tsx` mirrors the playground wiring for anything user-facing.
+- At least one new scenario in `examples/playground/scenarios/` exercises the new primitive end-to-end via the agent loop.
+- `bun run play` opens cleanly; `bun run play:script <scenario>` passes locally (provider key set).
+
+### 8. Smoke readiness
+
+- `bun run smoke` passes against the *current* published version (catches anything subtle in the scenario shape itself before this version ships).
 
 ## Output
 

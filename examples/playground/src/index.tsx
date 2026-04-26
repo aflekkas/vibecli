@@ -12,11 +12,6 @@ import { readClipboardImage } from "@aflekkas/vibecli/clipboard";
 import type { ContentBlock } from "@aflekkas/vibecli/providers";
 import { readFile } from "node:fs/promises";
 
-// Swap the model in three lines:
-//   1. bun add @ai-sdk/<provider>          (e.g. @ai-sdk/openai)
-//   2. import { createX } from "@ai-sdk/<provider>";
-//   3. change `name`, `model`, and `languageModel` below.
-// Any provider in the Vercel AI SDK ecosystem works.
 const MODEL = "claude-sonnet-4-5";
 const provider = new AiSdkProvider({
   name: "anthropic",
@@ -24,16 +19,18 @@ const provider = new AiSdkProvider({
   languageModel: anthropic(MODEL),
 });
 
-// Identity: change this string to give the CLI its own persona, name, voice, rules.
-// Swap at runtime with `agent.setSystem("...")`.
 const SYSTEM_PROMPT = "You are a helpful CLI assistant. Be concise.";
-
-// Initial theme. Built-ins: __THEME_NAMES__.
-// Type `/theme` while running to switch live, or define your own with
-// `defineTheme({ accent: "#hex", ... })` from "@aflekkas/vibecli/themes".
-const INITIAL_THEME: ThemeName = "__THEME__";
+const INITIAL_THEME: ThemeName = "pink";
 
 type Turn = { role: "user" | "assistant" | "meta"; text: string };
+
+const HELP_TEXT = [
+  "/theme   switch theme",
+  "/clip    attach clipboard image to next message (macOS)",
+  "/clear   reset conversation",
+  "/help    show commands",
+  "(empty submit exits)",
+].join("\n");
 
 type ScenarioStep = { input: string; expectContains?: string };
 
@@ -72,14 +69,6 @@ async function runScenario(scriptPath: string): Promise<void> {
   }
   process.stdout.write(`\nscenario passed: ${steps.length} step(s)\n`);
 }
-
-const HELP_TEXT = [
-  "/theme   switch theme",
-  "/clip    attach clipboard image to next message (macOS)",
-  "/clear   reset conversation",
-  "/help    show commands",
-  "(empty submit exits)",
-].join("\n");
 
 function Chat({
   themeName,
@@ -169,9 +158,9 @@ function Chat({
 
   return (
     <Box flexDirection="column" gap={1}>
-      <GradientText text="vibecli" />
+      <GradientText text="vibecli examples playground" />
       <Text color={muted}>
-        Set ANTHROPIC_API_KEY in .env, then chat. Type `/help` for commands. Submit empty to exit.
+        Local source via tsconfig paths. Edits in ../../src/ show up on next run. Type /help for commands.
       </Text>
       {turns.map((t, i) => (
         <Box key={i} flexDirection="column">

@@ -2,6 +2,7 @@
 name: refactoring
 description: Reshape `src/` for clarity, decomposition, or boundary integrity without changing the public API. Use on `/refactor`, when a file has grown past single-purpose, or when the boundary-reviewer flags a leak that needs structural cleanup.
 model: opus
+color: blue
 tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
@@ -19,7 +20,7 @@ You restructure `src/` while holding two things constant: the public API and the
 
 - Adding features. That's a different agent.
 - Changing the public API. That's a breaking-change conversation, not a refactor.
-- Editing rawdog. That's a separate, sequenced step.
+- Editing `examples/playground/` to move things into `src/`. That's the `promote` skill, not a refactor.
 
 ## Routine
 
@@ -29,6 +30,7 @@ You restructure `src/` while holding two things constant: the public API and the
 4. **Execute small commits.** One refactor move per commit. Easier to bisect.
 5. **Hand to boundary-reviewer.** Before declaring done, run the boundary-audit skill or invoke the boundary-reviewer agent on the diff.
 6. **Hand to documentation.** If module names changed or the layout tree shifted, the documentation agent updates `README.md` and `CLAUDE.md` layout section.
+7. **Run the playground.** `bun run play:script <relevant scenario>` confirms the public surface still works after restructure. If a scenario breaks, the refactor changed the API — stop and reconsider.
 
 ## Hard rules
 

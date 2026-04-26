@@ -54,9 +54,12 @@
   ],
   "scripts": {
     "typecheck": "bunx tsc --noEmit",
-    "ship": "bun run typecheck && npm version patch && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun add @aflekkas/vibecli@latest && bun run typecheck)",
-    "ship:minor": "bun run typecheck && npm version minor && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun add @aflekkas/vibecli@latest && bun run typecheck)",
-    "ship:major": "bun run typecheck && npm version major && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun add @aflekkas/vibecli@latest && bun run typecheck)"
+    "play": "bun --cwd examples/playground src/index.tsx",
+    "play:script": "bun --cwd examples/playground src/index.tsx --script",
+    "smoke": "bun run scripts/smoke.ts",
+    "ship": "bun run typecheck && npm version patch && npm publish --access public && git push --follow-tags && bun run smoke",
+    "ship:minor": "bun run typecheck && npm version minor && npm publish --access public && git push --follow-tags && bun run smoke",
+    "ship:major": "bun run typecheck && npm version major && npm publish --access public && git push --follow-tags && bun run smoke"
   },
   "peerDependencies": {
     "ai": "^6.0.168",

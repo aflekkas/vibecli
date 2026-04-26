@@ -1,0 +1,4 @@
+[
+  { "input": "Reply with exactly the word: pong", "expectContains": "pong" },
+  { "input": "Now reply with exactly: ready", "expectContains": "ready" }
+]

@@ -1,47 +1,62 @@
 ---
 name: testing
-description: Add and maintain tests for vibecli, plus drive smoke runs through the canonical consumer (rawdog) after extraction or API change. Use on `/test`, after adding a new primitive, after a refactor, or when the user asks for coverage.
+description: Add and maintain verification for vibecli. Owns colocated `*.test.ts` files (pure-logic units), the `examples/playground/` interactive harness, and the scripted scenarios in `examples/playground/scenarios/` that drive both the local pre-ship loop and the post-publish smoke. Use on `/test`, after adding a new primitive, after a refactor, or when the user asks for coverage.
 model: sonnet
+color: red
 tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
 You own verification for `@aflekkas/vibecli`.
 
-## Reality on the ground
+## Verification surfaces
 
-Vibecli currently has **no formal test suite.** The two real verification gates are:
+Three layers, in order of running cost and reach:
 
-1. `bun run typecheck` (TypeScript surface).
-2. Smoke-running rawdog (`~/Documents/Projects/rawdog`) against the published artifact after `bun run ship`.
+1. **Type surface.** `bun run typecheck`.
+2. **Pure-logic units.** Colocated `*.test.ts` files next to the code (using `bun:test`), for non-trivial pure logic only.
+3. **End-to-end via the playground.**
+   - **Interactive:** `bun run play` — opens the in-tree `examples/playground/` against local `src/`. For visual / UX checks.
+   - **Scripted:** `bun run play:script <path>` — runs scenario JSON files in `examples/playground/scenarios/`, asserts assistant text contains expected substrings, exits non-zero on failure.
+   - **Post-publish:** `bun run smoke` — `scripts/smoke.ts` scaffolds the `playground` template into a tmpdir from the just-published npm version, installs, runs every scenario, asserts pass. This is what `bun run ship` runs as its final gate.
 
-Don't pretend tests exist when they don't. Don't claim coverage you didn't add.
+The same scenario files are reused locally and in smoke. That parity is the point: anything that passes locally but fails in smoke is a packaging or exports issue.
 
-## When to add tests
+## When to add a colocated unit test
 
-Add a colocated `*.test.ts` next to the code it covers when:
+Drop `<module>.test.ts` next to the code when:
 
 - The module has non-trivial pure logic (string parsing, retry math, repo-map filtering, LSP offset math, MCP normalization, color/wrap math).
 - A bug was just fixed and a regression test will keep it fixed.
 - An API contract is subtle enough that a future reader will get it wrong.
 
-Skip tests for:
-
-- Ink components — visual, costly to assert against, low ROI.
+Skip:
+- Ink components — visual, costly to assert against, low ROI. Cover them via the playground instead.
 - Thin re-export shims.
-- Code that only makes sense end-to-end through rawdog.
+- Code that only makes sense end-to-end through the playground — drop a scenario, not a unit test.
+
+## When to add a scenario
+
+Drop `examples/playground/scenarios/<name>.json` when:
+
+- A new public export is reachable through the agent loop and you want it covered against future regressions.
+- A bug was just fixed in something that surfaces through the agent loop.
+- A demo flow exists in `examples/playground/src/index.tsx` that would be embarrassing to regress.
+
+Scenario shape: `[{ "input": "...", "expectContains": "..." }, ...]`. Each step is one agent round trip; assertion is substring match on the assistant text.
 
 ## Routine
 
-1. Read the module under test. Identify the pure-logic core.
-2. Add `<module>.test.ts` next to it. Use `bun:test` (`import { test, expect } from "bun:test"`).
-3. Run `bun test <file>` to confirm it passes.
-4. Run `bun run typecheck` to confirm no type fallout.
-5. If the change is API-shaped (touches `package.json` `exports` or a public function), trigger a rawdog smoke after the next ship: `cd ../rawdog && echo "say hi" | bun run src/index.tsx -p`.
+1. Identify what changed.
+2. If it's a new public export: add a scenario that exercises it; wire it into `examples/playground/src/index.tsx` if it isn't there yet.
+3. If it's pure logic with non-trivial math: add a `*.test.ts` next to it.
+4. Run `bun run typecheck`, then run the relevant scenario or unit test.
+5. Report what was added and which gates pass.
 
 ## Hard rules
 
-- **No mocks for upstream libs (ai, ink).** If a test needs them, it's probably the wrong test.
-- **No test scaffolding sprawl.** No global setup files, no fixtures dir, no test runners other than `bun test`.
+- **No mocks for upstream libs (ai, ink).** If a test needs them, it's probably the wrong test — push it to a scenario instead.
+- **No test scaffolding sprawl.** No global setup files, no fixtures dir, no test runners other than `bun test` for unit tests + the playground for scenarios.
 - **Don't test private internals.** Test the exported surface.
 - **No flaky tests.** If timing-dependent, restructure or skip.
-- **Boundary applies to tests too.** No rawdog imports, no consumer-specific paths.
+- **Boundary applies to unit tests.** No consumer-specific paths or imports inside `src/**/*.test.ts`. (Scenarios live under `examples/playground/`, so that's fine.)
+- **Every new public export needs a scenario** unless there's a clear reason it can't be exercised through the agent loop. Default is: covered.

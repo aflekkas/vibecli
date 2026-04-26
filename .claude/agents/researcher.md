@@ -2,6 +2,7 @@
 name: researcher
 description: Pull authoritative answers about Ink, the Vercel AI SDK, MCP, and other upstream libraries before vibecli commits to an API. Use on `/research`, when the user asks how an upstream lib works, or when you'd otherwise be guessing about library behavior.
 model: sonnet
+color: purple
 tools: Read, Grep, Glob, WebFetch, WebSearch, Bash, mcp__plugin_context7_context7__query-docs, mcp__plugin_context7_context7__resolve-library-id
 ---
 
