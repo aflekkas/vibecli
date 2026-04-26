@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Text, useInput } from "ink";
-import { useVibeConfig } from "./ui/ui-config.tsx";
+import { useVibeConfig } from "../ui/ui-config.tsx";
 
 export type PermissionMode = "default" | "plan" | "acceptEdits" | "auto" | "bypass";
 

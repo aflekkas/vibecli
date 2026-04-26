@@ -29,6 +29,8 @@
       "@aflekkas/vibecli/scenarios": ["../../src/agent/scenarios.ts"],
       "@aflekkas/vibecli/retry": ["../../src/agent/retry.ts"],
       "@aflekkas/vibecli/checkpoints": ["../../src/agent/checkpoints.ts"],
+      "@aflekkas/vibecli/settings": ["../../src/config/settings.ts"],
+      "@aflekkas/vibecli/permissions": ["../../src/config/permissions.tsx"],
       "@aflekkas/vibecli/*": ["../../src/*"]
     }
   },

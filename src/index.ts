@@ -158,19 +158,19 @@ export type {
 export {
   loadSettingsHierarchy,
   mergeSettings,
-} from "./settings.ts";
+} from "./config/settings.ts";
 export type {
   ArrayPolicy,
   LoadSettingsHierarchyOptions,
   MergeSettingsOptions,
   SettingsLoadResult,
   SettingsSource,
-} from "./settings.ts";
+} from "./config/settings.ts";
 export {
   evaluatePermission,
   matchPermissionPattern,
   PermissionPrompt,
-} from "./permissions.tsx";
+} from "./config/permissions.tsx";
 export type {
   EvaluatePermissionInput,
   EvaluatePermissionResult,
@@ -178,4 +178,4 @@ export type {
   PermissionMode,
   PermissionPromptProps,
   PermissionRules,
-} from "./permissions.tsx";
+} from "./config/permissions.tsx";

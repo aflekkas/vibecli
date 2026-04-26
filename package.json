@@ -48,8 +48,8 @@
     "./chat": "./src/ui/chat.tsx",
     "./models": "./src/ui/models.tsx",
     "./slash": "./src/commands/slash.ts",
-    "./settings": "./src/settings.ts",
-    "./permissions": "./src/permissions.tsx"
+    "./settings": "./src/config/settings.ts",
+    "./permissions": "./src/config/permissions.tsx"
   },
   "files": [
     "bin",
