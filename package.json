@@ -1,6 +1,6 @@
 {
   "name": "@aflekkas/vibecli",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Reusable Ink + AI SDK primitives for vibecoded CLIs.",
   "type": "module",
   "license": "MIT",
