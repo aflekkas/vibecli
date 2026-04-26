@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Box, Text, render, useApp, useInput } from "ink";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -13,20 +13,13 @@ import { readClipboardImage } from "@aflekkas/vibecli/clipboard";
 import { runScenario, type ScenarioStep } from "@aflekkas/vibecli/scenarios";
 import { createCheckpointHistory } from "@aflekkas/vibecli/checkpoints";
 import { useAgentStream, MessageList } from "@aflekkas/vibecli/chat";
+import { defineModel, ModelPicker } from "@aflekkas/vibecli/models";
 import type { ContentBlock, Message, Provider } from "@aflekkas/vibecli/providers";
 import { readFile } from "node:fs/promises";
 import { buildTools } from "./tools.ts";
 
 // Model registry. Add an entry to expose a new model in `/model`.
-// Each entry needs: a stable id (the picker key), the provider name vibecli passes
-// to the AI SDK adapter, and a thunk that builds the languageModel on demand.
-// To add Google: `bun add @ai-sdk/google`, import `google`, push another entry.
-type ModelEntry = {
-  id: string;
-  providerName: string;
-  build: () => Provider;
-};
-
+// To add Google: `bun add @ai-sdk/google`, import `google`, push another defineModel({...}).
 function aiSdk(providerName: string, modelId: string, factory: (id: string) => any): Provider {
   return new AiSdkProvider({
     name: providerName,
@@ -35,11 +28,11 @@ function aiSdk(providerName: string, modelId: string, factory: (id: string) => a
   });
 }
 
-const MODELS: ModelEntry[] = [
-  { id: "gpt-4o-mini",       providerName: "openai",    build: () => aiSdk("openai",    "gpt-4o-mini",       openai) },
-  { id: "gpt-4.1",           providerName: "openai",    build: () => aiSdk("openai",    "gpt-4.1",           openai) },
-  { id: "claude-sonnet-4-5", providerName: "anthropic", build: () => aiSdk("anthropic", "claude-sonnet-4-5", anthropic) },
-  { id: "claude-haiku-4-5",  providerName: "anthropic", build: () => aiSdk("anthropic", "claude-haiku-4-5",  anthropic) },
+const MODELS = [
+  defineModel({ id: "gpt-4o-mini",       providerName: "openai",    build: () => aiSdk("openai",    "gpt-4o-mini",       openai) }),
+  defineModel({ id: "gpt-4.1",           providerName: "openai",    build: () => aiSdk("openai",    "gpt-4.1",           openai) }),
+  defineModel({ id: "claude-sonnet-4-5", providerName: "anthropic", build: () => aiSdk("anthropic", "claude-sonnet-4-5", anthropic) }),
+  defineModel({ id: "claude-haiku-4-5",  providerName: "anthropic", build: () => aiSdk("anthropic", "claude-haiku-4-5",  anthropic) }),
 ];
 
 const DEFAULT_MODEL_ID = "gpt-4o-mini";
@@ -76,49 +69,6 @@ const HELP_TEXT = [
   "/help    show commands",
   "(esc cancels in-flight generation; empty submit exits)",
 ].join("\n");
-
-function ModelPicker({
-  value,
-  onPick,
-  onCancel,
-}: {
-  value: string;
-  onPick: (id: string) => void;
-  onCancel: () => void;
-}) {
-  const config = useVibeConfig();
-  const accent = config.theme.colors.accent;
-  const muted = config.theme.colors.muted;
-  const initial = useMemo(() => Math.max(0, MODELS.findIndex((m) => m.id === value)), [value]);
-  const [index, setIndex] = useState(initial);
-
-  useInput((_input, key) => {
-    if (key.upArrow) setIndex((i) => (i - 1 + MODELS.length) % MODELS.length);
-    else if (key.downArrow) setIndex((i) => (i + 1) % MODELS.length);
-    else if (key.return) onPick(MODELS[index]!.id);
-    else if (key.escape) onCancel();
-  });
-
-  return (
-    <Box flexDirection="column">
-      {MODELS.map((m, i) => {
-        const selected = i === index;
-        return (
-          <Box key={m.id}>
-            <Text color={accent}>{selected ? "› " : "  "}</Text>
-            <Text color={accent} bold={selected}>
-              {m.id.padEnd(20)}
-            </Text>
-            <Text color={muted}>{m.providerName}</Text>
-          </Box>
-        );
-      })}
-      <Box marginTop={1}>
-        <Text color={muted}>↑/↓ choose, enter pick, esc cancel</Text>
-      </Box>
-    </Box>
-  );
-}
 
 function Chat({
   themeName,
@@ -270,6 +220,7 @@ function Chat({
         />
       ) : picking === "model" ? (
         <ModelPicker
+          models={MODELS}
           value={modelId}
           onPick={(id) => {
             const next = MODELS.find((m) => m.id === id);
