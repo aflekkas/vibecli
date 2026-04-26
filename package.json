@@ -49,9 +49,14 @@
   "files": [
     "bin",
     "src",
-    "templates",
     "docs",
-    "README.md"
+    "README.md",
+    "templates/*/src/**",
+    "templates/*/*.json",
+    "templates/*/*.md",
+    "templates/*/_gitignore",
+    "templates/*/.env.example",
+    "templates/*/tsconfig.json"
   ],
   "workspaces": [
     "templates/playground"
