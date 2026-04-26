@@ -18,14 +18,18 @@ Peer deps live in your CLI: `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`, `ink`, 
 
 ## ⚡ Scaffold
 
-Bootstrap a fresh Ink app pre-wired to vibecli's primitives:
+Bootstrap a fresh Ink + AI SDK agent CLI, pre-wired to vibecli's primitives. Deps install automatically.
 
 ```bash
 bunx @aflekkas/vibecli init my-cli
-cd my-cli && bun install && bun run dev
+cd my-cli
+cp .env.example .env  # paste your ANTHROPIC_API_KEY
+bun run dev
 ```
 
-Flags: `--name <pkg>`, `--pm bun|npm`, `--vibecli <version>`, `--force`. The scaffolder writes `package.json`, `tsconfig.json`, `src/index.tsx`, `README.md`, and `.gitignore`.
+The default scaffold ships a working chat loop against `claude-sonnet-4-5` via `@ai-sdk/anthropic`. Any Vercel AI SDK provider works — the generated `README.md` documents the 3-line swap (install `@ai-sdk/<provider>`, change one import, change one constructor arg).
+
+Flags: `--name <pkg>`, `--pm bun|npm`, `--vibecli <version>`, `--no-install` (skip auto-install), `--force` (overwrite existing files). The scaffolder writes `package.json`, `tsconfig.json`, `src/index.tsx`, `.env.example`, `README.md`, and `.gitignore`, then runs `bun install` (or `npm install`) in the new directory.
 
 The `vibecli` bin uses a `#!/usr/bin/env bun` shebang, so bun must be on `PATH` to invoke it directly. `bunx` is the safest entry point.
 

@@ -115,7 +115,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { TextInput } from "@aflekkas/vibecli/text-input";
 import { GradientText, createTheme } from "@aflekkas/vibecli/ui";
 import { AiSdkProvider } from "@aflekkas/vibecli/providers/adapter";
-import { createAgent, type Agent, type AgentEvent } from "@aflekkas/vibecli/agent";
+import { createAgent, type Agent } from "@aflekkas/vibecli/agent";
 
 // Swap the model in three lines:
 //   1. bun add @ai-sdk/<provider>          (e.g. @ai-sdk/openai)
@@ -157,7 +157,7 @@ function App() {
     setTurns((t) => [...t, { role: "user", text }, { role: "assistant", text: "" }]);
     setBusy(true);
     try {
-      for await (const ev of agent.send(text) as AsyncGenerator<AgentEvent>) {
+      for await (const ev of agent.send(text)) {
         if (ev.type === "text") {
           setTurns((t) => {
             const next = t.slice();
