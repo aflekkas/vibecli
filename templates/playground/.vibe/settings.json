@@ -1,0 +1,8 @@
+{
+  "permissionMode": "default",
+  "permissions": {
+    "allow": ["read_file:**", "glob:**"],
+    "deny": ["bash:rm -rf *"],
+    "ask": ["write_file:**", "bash:**"]
+  }
+}

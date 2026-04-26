@@ -26,7 +26,10 @@ export type LifecycleContext = {
   tool?: string;
   input?: string;
   output?: string;
+  mode?: string;
 };
+
+export type LifecycleResult = void | { allow: false; reason?: string };
 
 export type AgentOptions = {
   tools?: ToolEntry[];
@@ -35,7 +38,17 @@ export type AgentOptions = {
   compactKeep?: number;
   truncateKeep?: number;
   iterationCap?: number;
-  onLifecycle?: (event: LifecycleEvent, ctx: LifecycleContext) => void | Promise<void>;
+  onLifecycle?: (
+    event: LifecycleEvent,
+    ctx: LifecycleContext,
+  ) => LifecycleResult | Promise<LifecycleResult>;
+  /**
+   * Informational permission/operating mode. Surfaced to lifecycle ctx as `ctx.mode`.
+   * vibecli does not interpret this value. The consumer's `onLifecycle` decides whether
+   * to block tool calls based on it. Common values: "default", "plan", "acceptEdits",
+   * "auto", "bypass", but any string is accepted.
+   */
+  mode?: string;
 };
 
 export type AgentState = {
@@ -155,12 +168,13 @@ export function createAgent(initialProvider: Provider, system: string, opts: Age
   const iterationCap = opts.iterationCap ?? 20;
   const onLifecycle = opts.onLifecycle;
 
-  async function fire(event: LifecycleEvent, ctx: LifecycleContext) {
+  async function fire(event: LifecycleEvent, ctx: LifecycleContext): Promise<LifecycleResult> {
     if (!onLifecycle) return;
     try {
-      await onLifecycle(event, ctx);
+      return await onLifecycle(event, ctx);
     } catch {
       // Lifecycle hook errors must not break the agent loop.
+      return;
     }
   }
 
@@ -170,12 +184,12 @@ export function createAgent(initialProvider: Provider, system: string, opts: Age
   ): AsyncGenerator<AgentEvent> {
     const signal = sendOpts.signal;
     state.messages.push({ role: "user", content: userInput });
-    await fire("pre_turn", { provider: provider.name, model: provider.model });
+    await fire("pre_turn", { provider: provider.name, model: provider.model, mode: opts.mode });
 
     for (let iter = 0; iter < iterationCap; iter++) {
       if (signal?.aborted) {
         yield { type: "aborted" };
-        await fire("post_turn", { status: "aborted" });
+        await fire("post_turn", { status: "aborted", mode: opts.mode });
         return;
       }
 
@@ -212,11 +226,11 @@ export function createAgent(initialProvider: Provider, system: string, opts: Age
       } catch (e: any) {
         if (signal?.aborted || e?.name === "AbortError") {
           yield { type: "aborted" };
-          await fire("post_turn", { status: "aborted" });
+          await fire("post_turn", { status: "aborted", mode: opts.mode });
           return;
         }
         yield { type: "error", message: e.message || String(e) };
-        await fire("post_turn", { status: "error" });
+        await fire("post_turn", { status: "error", mode: opts.mode });
         return;
       }
 
@@ -228,7 +242,7 @@ export function createAgent(initialProvider: Provider, system: string, opts: Age
 
       if (toolCalls.length === 0 || stopReason === "end_turn" || stopReason === "stop") {
         yield { type: "turn_done", usage };
-        await fire("post_turn", { status: "ok" });
+        await fire("post_turn", { status: "ok", mode: opts.mode });
 
         if (opts.contextWindow) {
           const result = await compactMessages(provider, currentSystem, state, {
@@ -249,7 +263,7 @@ export function createAgent(initialProvider: Provider, system: string, opts: Age
       for (const call of toolCalls) {
         if (signal?.aborted) {
           yield { type: "aborted" };
-          await fire("post_turn", { status: "aborted" });
+          await fire("post_turn", { status: "aborted", mode: opts.mode });
           return;
         }
         yield { type: "tool_start", name: call.name, input: call.input };
@@ -261,8 +275,29 @@ export function createAgent(initialProvider: Provider, system: string, opts: Age
             return "";
           }
         })();
-        await fire("pre_tool", { tool: call.name, input: toolInputJson.slice(0, 4000) });
+        const preToolResult = await fire("pre_tool", {
+          tool: call.name,
+          input: toolInputJson.slice(0, 4000),
+          mode: opts.mode,
+        });
         let output: string;
+        if (preToolResult && preToolResult.allow === false) {
+          output = `error: blocked by pre_tool hook${preToolResult.reason ? ": " + preToolResult.reason : ""}`;
+          yield { type: "tool_end", name: call.name, output };
+          await fire("post_tool", {
+            tool: call.name,
+            input: toolInputJson.slice(0, 4000),
+            output,
+            mode: opts.mode,
+          });
+          results.push({
+            type: "tool_result",
+            tool_use_id: call.id,
+            content: output,
+            tool_name: call.name,
+          });
+          continue;
+        }
         if (!handler) {
           output = `error: unknown tool ${call.name}`;
         } else {
@@ -277,6 +312,7 @@ export function createAgent(initialProvider: Provider, system: string, opts: Age
           tool: call.name,
           input: toolInputJson.slice(0, 4000),
           output: output.slice(0, 2000),
+          mode: opts.mode,
         });
         results.push({
           type: "tool_result",

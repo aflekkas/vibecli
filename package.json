@@ -1,7 +1,7 @@
 {
   "name": "@aflekkas/vibecli",
   "version": "0.0.14",
-  "description": "Reusable Ink + AI SDK primitives for vibecoded CLIs.",
+  "description": "Primitives for vibecoding your own CLI agent. Agents are loops; harnesses inject context and run commands; vibecli ships the rest.",
   "type": "module",
   "license": "MIT",
   "author": "Alexandros Lekkas",
@@ -47,7 +47,9 @@
     "./scenarios": "./src/scenarios.ts",
     "./chat": "./src/chat.tsx",
     "./models": "./src/models.tsx",
-    "./slash": "./src/commands/slash.ts"
+    "./slash": "./src/commands/slash.ts",
+    "./settings": "./src/settings.ts",
+    "./permissions": "./src/permissions.tsx"
   },
   "files": [
     "bin",

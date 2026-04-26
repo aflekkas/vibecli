@@ -2,9 +2,23 @@
 
 [![npm](https://img.shields.io/npm/v/@aflekkas/vibecli.svg)](https://www.npmjs.com/package/@aflekkas/vibecli)
 
-Building a TUI agent on Ink + the Vercel AI SDK means rewriting the same primitives every time: a text input that survives paste and cursor nav, clipboard image extraction, a markdown highlighter for streaming output, exponential backoff for flaky provider calls, and an SDK adapter that knows about Anthropic prompt caching. vibecli is the layer factored out so the next vibecoded CLI starts at minute zero, not minute thirty.
+Stand up your own CLI agent in an afternoon. Agents are loops. Harnesses inject context and run commands. vibecli ships the primitives so the rest is yours.
 
 Pre-alpha. The API will move, pin a version and expect breakage on minor bumps.
+
+## 🧠 Thesis
+
+An AI agent is a loop: build a prompt, call the model, run the tool calls, feed results back, repeat until done. A harness around that loop is a context-injector and a command-runner. Strip the brand off Claude Code, Cursor, Cline, or Aider and you find the same skeleton. vibecli is that skeleton as small, single-purpose primitives — provider plumbing, an agent loop, an Ink text input that survives paste, a markdown highlighter, theming, slash commands from a directory of `.md` files, scripted scenarios — plus a `vibecli init` scaffolder that drops you into a runnable Ink + AI-SDK CLI in one command.
+
+The motivating use case is the company that needs an internal CLI agent and cannot use the closed products. They have OAuth, internal data, domain-specific tools, security review. They cannot send their codebase to a vendor and they cannot fork a SaaS UI. So they vibecode their own CLI on vibecli, ship it as a binary to their team, and own every product decision. The same shape works for the solo founder wrapping their SaaS API, the research lab over their dataset, the consultant shipping a one-off deliverable, and the hobbyist with personal notes.
+
+The convention layer leans on the filesystem. Slash commands are markdown files in a directory. Themes are objects in a registry. Scenarios are scripted JSON. Agent identity is a string. Settings are a hierarchy of JSON files. Permissions are glob patterns. There is no framework to extend, no plugin manifest, no inversion of control. You write the loop's caller, the input handler, the tool runners, and the rendering. vibecli ships the parts that benefit from sharing, in `src/` modules small enough to read in one sitting.
+
+This is a library, not a framework, and not a product. The package surface is functions and React components. The in-tree `templates/playground/` is demo wiring, not API. The boundary is real: nothing in `src/` knows about any specific consumer. Pre-alpha is honest about API churn — pin a version, read the release notes, expect every change to break something until proven otherwise.
+
+A natural next primitive is multi-agent coordination — a planner that hands off to specialists, a supervisor watching a long-running task, an inspector auditing another agent's tool calls. Each of those is, again, just a loop with disciplined IO around it. Direction, not commitment.
+
+Full thesis: [THESIS.md](./THESIS.md).
 
 ## 📦 Install
 
@@ -99,10 +113,11 @@ Use subpath imports for focused code. The root package also re-exports the curre
 
 ## 📚 Docs
 
-Deeper material lives under [`docs/`](docs/). Browse from here, or point an MCP-capable agent at `bunx @aflekkas/vibecli mcp` to read the same content over the wire.
+The docs are a small set of markdown files at the repo root and under [`docs/`](docs/). Each one cross-links its siblings at the bottom — browse from here on github, or point an MCP-capable agent at `bunx @aflekkas/vibecli mcp` to read the same content over the wire.
 
 | Page | What's in it |
 |---|---|
+| [`THESIS.md`](THESIS.md) | The why. Agents as loops, harness as context-injector + command-runner, files-and-folders as the API, motivating use case, and explicit anti-thesis. |
 | [`docs/cli.md`](docs/cli.md) | `vibecli init` flag-by-flag reference (theme, package manager, prompt + install toggles), `vibecli mcp` resources/tools, and local-smoke recipe. |
 | [`docs/configuration.md`](docs/configuration.md) | `VibeConfigProvider` shape, `<TextInput>` options, theme + gradient + role-message + loading defaults, highlighter ANSI overrides, `AiSdkProvider` per-provider knobs, and clipboard tempfile options. |
 

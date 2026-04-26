@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Text, render, useApp, useInput } from "ink";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { TextInput } from "@aflekkas/vibecli/text-input";
 import { GradientText } from "@aflekkas/vibecli/ui";
 import { VibeConfigProvider, useVibeConfig } from "@aflekkas/vibecli/config";
@@ -15,8 +17,26 @@ import { createCheckpointHistory } from "@aflekkas/vibecli/checkpoints";
 import { useAgentStream, MessageList } from "@aflekkas/vibecli/chat";
 import { defineModel, ModelPicker } from "@aflekkas/vibecli/models";
 import { createSlashRegistry } from "@aflekkas/vibecli/slash";
+import { loadSettingsHierarchy } from "@aflekkas/vibecli/settings";
+import {
+  evaluatePermission,
+  type PermissionMode,
+  type PermissionRules,
+} from "@aflekkas/vibecli/permissions";
 import type { ContentBlock, Message, Provider } from "@aflekkas/vibecli/providers";
 import { buildTools } from "./tools.ts";
+
+const settings = loadSettingsHierarchy({
+  files: [
+    { path: join(homedir(), ".vibe/settings.json"), scope: "user" },
+    { path: ".vibe/settings.json", scope: "project" },
+  ],
+});
+
+const initialMode: PermissionMode =
+  (settings.merged.permissionMode as PermissionMode) ?? "default";
+const permissionRules: PermissionRules =
+  (settings.merged.permissions as PermissionRules) ?? {};
 
 // Model registry. Add an entry to expose a new model in `/model`.
 // To add Google: `bun add @ai-sdk/google`, import `google`, push another defineModel({...}).
@@ -67,13 +87,57 @@ function Chat({
   const [picking, setPicking] = useState<"theme" | "model" | null>(null);
   const [pendingImage, setPendingImage] = useState<{ mediaType: string; data: string } | null>(null);
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
+  const [mode, setMode] = useState<PermissionMode>(initialMode);
   const toolsRef = useRef(buildTools());
   const historyRef = useRef(createCheckpointHistory<Message[]>([], { limit: 50 }));
+  const modeRef = useRef(mode);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  const pushMetaRef = useRef<(text: string) => void>(() => {});
+
+  const lifecycleHandler = useMemo(
+    () =>
+      (event: "pre_turn" | "post_turn" | "pre_tool" | "post_tool", ctx: {
+        tool?: string;
+        input?: string;
+      }) => {
+        if (event !== "pre_tool" || !ctx.tool) return;
+        let inputKey: string | undefined;
+        if (ctx.input) {
+          try {
+            const parsed = JSON.parse(ctx.input);
+            if (typeof parsed?.command === "string") inputKey = parsed.command;
+            else if (typeof parsed?.path === "string") inputKey = parsed.path;
+          } catch {}
+        }
+        const result = evaluatePermission({
+          tool: ctx.tool,
+          inputKey,
+          rules: permissionRules,
+          mode: modeRef.current,
+        });
+        if (result.decision === "deny") {
+          return { allow: false as const, reason: result.reason };
+        }
+        if (result.decision === "ask") {
+          pushMetaRef.current(`permission ask (auto-allowed in playground): ${result.reason}`);
+        }
+        return;
+      },
+    [],
+  );
 
   useEffect(() => {
     const initial = MODELS.find((m) => m.id === DEFAULT_MODEL_ID) ?? MODELS[0]!;
-    setAgent(createAgent(initial.build(), SYSTEM_PROMPT, { tools: toolsRef.current }));
-  }, []);
+    setAgent(
+      createAgent(initial.build(), SYSTEM_PROMPT, {
+        tools: toolsRef.current,
+        mode: modeRef.current,
+        onLifecycle: lifecycleHandler,
+      }),
+    );
+  }, [lifecycleHandler]);
 
   const { turns, setTurns, send: sendStream, busy, pushMeta, abort, reset } = useAgentStream(agent, {
     onBeforeSend: () => {
@@ -99,6 +163,10 @@ function Chat({
       }
     },
   });
+
+  useEffect(() => {
+    pushMetaRef.current = pushMeta;
+  }, [pushMeta]);
 
   useInput((_input, key) => {
     if (key.escape && busy) abort();
@@ -149,23 +217,35 @@ function Chat({
     }, "list available tools");
     r.add("clear", () => {
       const current = MODELS.find((m) => m.id === modelId) ?? MODELS[0]!;
-      setAgent(createAgent(current.build(), SYSTEM_PROMPT, { tools: toolsRef.current }));
+      setAgent(
+        createAgent(current.build(), SYSTEM_PROMPT, {
+          tools: toolsRef.current,
+          mode: modeRef.current,
+          onLifecycle: lifecycleHandler,
+        }),
+      );
       historyRef.current.clear([]);
       reset();
       setPendingImage(null);
       pushMeta("conversation reset.");
     }, "reset conversation");
+    r.add("mode", () => {
+      const order: PermissionMode[] = ["default", "plan", "acceptEdits", "auto", "bypass"];
+      const next = order[(order.indexOf(mode) + 1) % order.length]!;
+      setMode(next);
+      pushMeta(`permission mode: ${next}`);
+    }, "cycle permission mode (default → plan → acceptEdits → auto → bypass)");
     r.add("help", () => {
       pushMeta(r.help() + "\n(esc cancels in-flight generation; empty submit exits)");
     }, "show commands");
     return r;
-  }, [agent, modelId, pushMeta, reset, setTurns]);
+  }, [agent, lifecycleHandler, mode, modelId, pushMeta, reset, setTurns]);
 
   return (
     <Box flexDirection="column" gap={1}>
       <GradientText text="vibecli" />
       <Text color={muted}>
-        model: {modelId}. Type `/help` for commands. Submit empty to exit.
+        model: {modelId}. mode: {mode}. Type `/help` for commands. Submit empty to exit.
       </Text>
       <MessageList turns={turns} prefix={{ user: "you> ", assistant: "ai> ", meta: "meta> " }} />
       {pendingImage ? (

@@ -55,3 +55,7 @@ Resources: `vibecli://readme`, `vibecli://docs/configuration`, `vibecli://docs/c
 Tools: `list_subpaths` (every importable subpath with a one-line summary), `get_subpath_docs({ name })` (per-subpath summary, canonical import statement, README example pointer).
 
 The docs version equals the package version. `bun update @aflekkas/vibecli` is also a docs bump for any agent connected to the server.
+
+---
+
+← [README](../README.md) · [thesis](../THESIS.md) · [cli](./cli.md) · [configuration](./configuration.md)

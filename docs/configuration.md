@@ -180,3 +180,7 @@ import { readClipboardImage, writeTempImage } from "@aflekkas/vibecli/clipboard"
 const image = await readClipboardImage({ prefix: "my-cli-paste" });
 const path = await writeTempImage(buffer, ".png", { dir: ".tmp", prefix: "my-cli" });
 ```
+
+---
+
+← [README](../README.md) · [thesis](../THESIS.md) · [cli](./cli.md) · [configuration](./configuration.md)

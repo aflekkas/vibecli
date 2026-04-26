@@ -134,6 +134,7 @@ export type {
   AgentState,
   LifecycleContext,
   LifecycleEvent,
+  LifecycleResult,
   ToolEntry,
   ToolHandler,
   TurnUsage,
@@ -154,3 +155,27 @@ export type {
   UseAgentStreamOptions,
   UseAgentStreamResult,
 } from "./chat.tsx";
+export {
+  loadSettingsHierarchy,
+  mergeSettings,
+} from "./settings.ts";
+export type {
+  ArrayPolicy,
+  LoadSettingsHierarchyOptions,
+  MergeSettingsOptions,
+  SettingsLoadResult,
+  SettingsSource,
+} from "./settings.ts";
+export {
+  evaluatePermission,
+  matchPermissionPattern,
+  PermissionPrompt,
+} from "./permissions.tsx";
+export type {
+  EvaluatePermissionInput,
+  EvaluatePermissionResult,
+  PermissionDecision,
+  PermissionMode,
+  PermissionPromptProps,
+  PermissionRules,
+} from "./permissions.tsx";
