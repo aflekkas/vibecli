@@ -288,7 +288,11 @@ export function TextInput({
         return;
       }
 
-      if (key.backspace) {
+      // Ink reports the physical Backspace key (`\x7f`) as `key.delete`, not
+      // `key.backspace`. Forward-delete (`\x1b[3~`) also arrives as
+      // `key.delete` and ink doesn't expose enough info to distinguish them,
+      // so both behave as backward-delete here. Ctrl+H (`\b`) → `key.backspace`.
+      if (key.backspace || key.delete) {
         if (key.meta || (key.ctrl && input === "w")) {
           const start = wordStart(value, cursor);
           if (start === cursor) return;
@@ -298,18 +302,6 @@ export function TextInput({
         if (cursor === 0) return;
         const back = prevCharLen(value, cursor);
         commit(value.slice(0, cursor - back) + value.slice(cursor), cursor - back);
-        return;
-      }
-      if (key.delete) {
-        if (key.meta) {
-          const end = wordEnd(value, cursor);
-          if (end === cursor) return;
-          commit(value.slice(0, cursor) + value.slice(end), cursor);
-          return;
-        }
-        if (cursor >= value.length) return;
-        const fwd = nextCharLen(value, cursor);
-        commit(value.slice(0, cursor) + value.slice(cursor + fwd), cursor);
         return;
       }
 
