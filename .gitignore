@@ -1,3 +1,7 @@
 node_modules
 *.log
 .DS_Store
+
+# Local agent instructions, not meant for the public repo
+AGENTS.md
+CLAUDE.md
