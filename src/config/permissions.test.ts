@@ -2,23 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { evaluatePermission, matchPermissionPattern } from "./permissions.tsx";
 
 describe("evaluatePermission", () => {
-  test("bypass mode → allow regardless of rules", () => {
-    const result = evaluatePermission({
-      tool: "bash",
-      inputKey: "rm -rf /",
-      rules: { deny: ["**"] },
-      mode: "bypass",
-    });
-    expect(result.decision).toBe("allow");
-    expect(result.reason).toBe("bypass mode");
-  });
-
   test("deny rule beats allow rule", () => {
     const result = evaluatePermission({
       tool: "bash",
       inputKey: "rm -rf /",
       rules: { allow: ["bash:*"], deny: ["bash:rm *"] },
-      mode: "default",
     });
     expect(result.decision).toBe("deny");
     expect(result.reason).toContain("bash:rm *");
@@ -29,7 +17,6 @@ describe("evaluatePermission", () => {
       tool: "write_file",
       inputKey: "/etc/passwd",
       rules: { allow: ["write_file:**"], ask: ["write_file:/etc/*"] },
-      mode: "auto",
     });
     expect(result.decision).toBe("ask");
     expect(result.reason).toContain("write_file:/etc/*");
@@ -40,58 +27,24 @@ describe("evaluatePermission", () => {
       tool: "read_file",
       inputKey: "/tmp/foo",
       rules: { allow: ["read_file:/tmp/*"], deny: ["read_file:/etc/*"] },
-      mode: "default",
     });
     expect(result.decision).toBe("allow");
     expect(result.reason).toContain("read_file:/tmp/*");
   });
 
-  test("plan mode default → deny", () => {
-    const result = evaluatePermission({
-      tool: "bash",
-      rules: {},
-      mode: "plan",
-    });
-    expect(result.decision).toBe("deny");
-    expect(result.reason).toBe("plan mode: tool execution disabled");
-  });
-
-  test("acceptEdits mode default → allow", () => {
-    const result = evaluatePermission({
-      tool: "write_file",
-      inputKey: "/tmp/x",
-      rules: {},
-      mode: "acceptEdits",
-    });
-    expect(result.decision).toBe("allow");
-    expect(result.reason).toBe("acceptEdits mode");
-  });
-
-  test("auto mode default → allow", () => {
+  test("no rule matched returns ask", () => {
     const result = evaluatePermission({
       tool: "anything",
       rules: {},
-      mode: "auto",
-    });
-    expect(result.decision).toBe("allow");
-    expect(result.reason).toBe("auto mode");
-  });
-
-  test("default mode + no rule → ask", () => {
-    const result = evaluatePermission({
-      tool: "anything",
-      rules: {},
-      mode: "default",
     });
     expect(result.decision).toBe("ask");
-    expect(result.reason).toBe("no rule matched, default mode asks");
+    expect(result.reason).toBe("no rule matched");
   });
 
   test("target without inputKey is just the tool name", () => {
     const result = evaluatePermission({
       tool: "bash",
       rules: { allow: ["bash"] },
-      mode: "default",
     });
     expect(result.decision).toBe("allow");
   });

@@ -2,7 +2,18 @@ import React from "react";
 import { Box, Text, useInput } from "ink";
 import { useVibeConfig } from "../ui/ui-config.tsx";
 
-export type PermissionMode = "default" | "plan" | "acceptEdits" | "auto" | "bypass";
+export type PermissionMode = string;
+
+/** Common permission-mode vocabulary used by Claude-Code-shaped consumers. Optional reference set. */
+export const COMMON_PERMISSION_MODES = [
+  "default",
+  "plan",
+  "acceptEdits",
+  "auto",
+  "bypass",
+] as const;
+
+export type CommonPermissionMode = typeof COMMON_PERMISSION_MODES[number];
 
 export type PermissionDecision = "allow" | "ask" | "deny";
 
@@ -17,15 +28,14 @@ export type PermissionRules = {
 
 export type EvaluatePermissionInput = {
   tool: string;
-  /** Optional caller-derived sub-key, e.g. a command string for a bash tool, a path for a write tool. */
+  /** Optional caller-derived sub-key, e.g. a shell command string, a file path. */
   inputKey?: string;
   rules: PermissionRules;
-  mode: PermissionMode;
 };
 
 export type EvaluatePermissionResult = {
   decision: PermissionDecision;
-  /** Why we landed on this decision — for logging or to render in the prompt. */
+  /** Why we landed on this decision, for logging or to render in the prompt. */
   reason: string;
 };
 
@@ -76,12 +86,7 @@ function findMatch(patterns: ReadonlyArray<string> | undefined, target: string):
 }
 
 export function evaluatePermission(input: EvaluatePermissionInput): EvaluatePermissionResult {
-  const { tool, inputKey, rules, mode } = input;
-
-  if (mode === "bypass") {
-    return { decision: "allow", reason: "bypass mode" };
-  }
-
+  const { tool, inputKey, rules } = input;
   const target = targetFor(tool, inputKey);
 
   const denied = findMatch(rules.deny, target);
@@ -93,16 +98,7 @@ export function evaluatePermission(input: EvaluatePermissionInput): EvaluatePerm
   const allowed = findMatch(rules.allow, target);
   if (allowed) return { decision: "allow", reason: `allowed by rule: ${allowed}` };
 
-  switch (mode) {
-    case "plan":
-      return { decision: "deny", reason: "plan mode: tool execution disabled" };
-    case "acceptEdits":
-      return { decision: "allow", reason: "acceptEdits mode" };
-    case "auto":
-      return { decision: "allow", reason: "auto mode" };
-    case "default":
-      return { decision: "ask", reason: "no rule matched, default mode asks" };
-  }
+  return { decision: "ask", reason: "no rule matched" };
 }
 
 export type PermissionPromptProps = {

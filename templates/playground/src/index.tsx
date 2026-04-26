@@ -38,6 +38,42 @@ const initialMode: PermissionMode =
 const permissionRules: PermissionRules =
   (settings.merged.permissions as PermissionRules) ?? {};
 
+// Mode interpretation lives in the consumer: src/permissions.tsx is a pure rule evaluator.
+// Returns a deny result when the tool should be blocked, or undefined to allow it through.
+// In "ask" cases the playground auto-allows (no interactive prompt yet) and surfaces a meta line
+// via `pushMeta` if provided.
+function gatePermission(
+  tool: string,
+  inputKey: string | undefined,
+  mode: PermissionMode,
+  rules: PermissionRules,
+  pushMeta?: (text: string) => void,
+): { allow: false; reason: string } | undefined {
+  if (mode === "bypass") return; // allow without checking rules
+  const result = evaluatePermission({ tool, inputKey, rules });
+  if (result.decision === "deny") {
+    return { allow: false, reason: result.reason };
+  }
+  if (mode === "plan" && result.decision !== "allow") {
+    return { allow: false, reason: `plan mode: ${result.reason}` };
+  }
+  if (result.decision === "ask") {
+    if (mode === "acceptEdits" || mode === "auto") return; // auto-allow
+    pushMeta?.(`permission ask (auto-allowed in playground): ${result.reason}`);
+  }
+  return;
+}
+
+function deriveInputKey(rawInput: string | undefined): string | undefined {
+  if (!rawInput) return undefined;
+  try {
+    const parsed = JSON.parse(rawInput);
+    if (typeof parsed?.command === "string") return parsed.command;
+    if (typeof parsed?.path === "string") return parsed.path;
+  } catch {}
+  return undefined;
+}
+
 // Model registry. Add an entry to expose a new model in `/model`.
 // To add Google: `bun add @ai-sdk/google`, import `google`, push another defineModel({...}).
 function aiSdk(providerName: string, modelId: string, factory: (id: string) => any): Provider {
@@ -103,27 +139,14 @@ function Chat({
         input?: string;
       }) => {
         if (event !== "pre_tool" || !ctx.tool) return;
-        let inputKey: string | undefined;
-        if (ctx.input) {
-          try {
-            const parsed = JSON.parse(ctx.input);
-            if (typeof parsed?.command === "string") inputKey = parsed.command;
-            else if (typeof parsed?.path === "string") inputKey = parsed.path;
-          } catch {}
-        }
-        const result = evaluatePermission({
-          tool: ctx.tool,
+        const inputKey = deriveInputKey(ctx.input);
+        return gatePermission(
+          ctx.tool,
           inputKey,
-          rules: permissionRules,
-          mode: modeRef.current,
-        });
-        if (result.decision === "deny") {
-          return { allow: false as const, reason: result.reason };
-        }
-        if (result.decision === "ask") {
-          pushMetaRef.current(`permission ask (auto-allowed in playground): ${result.reason}`);
-        }
-        return;
+          modeRef.current,
+          permissionRules,
+          (text) => pushMetaRef.current(text),
+        );
       },
     [],
   );
@@ -323,7 +346,17 @@ if (scriptIdx >= 0) {
     process.exit(2);
   }
   const initial = MODELS.find((m) => m.id === DEFAULT_MODEL_ID) ?? MODELS[0]!;
-  const agent = createAgent(initial.build(), SYSTEM_PROMPT, { tools: buildTools() });
+  const scriptMode: PermissionMode = initialMode;
+  const agent = createAgent(initial.build(), SYSTEM_PROMPT, {
+    tools: buildTools(),
+    mode: scriptMode,
+    onLifecycle: (event, ctx) => {
+      if (event !== "pre_tool" || !ctx.tool) return;
+      const inputKey = deriveInputKey(ctx.input);
+      // No `pushMeta` in script mode — `ask` results are silently auto-allowed.
+      return gatePermission(ctx.tool, inputKey, scriptMode, permissionRules);
+    },
+  });
   const r = await runScenarioFile(scriptPath, agent);
   process.exit(r.failed > 0 ? 1 : 0);
 } else {

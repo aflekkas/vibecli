@@ -2,7 +2,7 @@
   "permissionMode": "default",
   "permissions": {
     "allow": ["read_file:**", "glob:**"],
-    "deny": ["bash:rm -rf *"],
+    "deny": ["bash:rm -rf *", "read_file:/etc/passwd"],
     "ask": ["write_file:**", "bash:**"]
   }
 }

@@ -170,8 +170,10 @@ export {
   evaluatePermission,
   matchPermissionPattern,
   PermissionPrompt,
+  COMMON_PERMISSION_MODES,
 } from "./config/permissions.tsx";
 export type {
+  CommonPermissionMode,
   EvaluatePermissionInput,
   EvaluatePermissionResult,
   PermissionDecision,
