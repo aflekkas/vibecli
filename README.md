@@ -90,6 +90,7 @@ Use subpath imports for focused code. The root package also re-exports the curre
 | `@aflekkas/vibecli/providers/adapter` | `AiSdkProvider`, Vercel AI SDK adapter wired for Anthropic prompt caching, adaptive thinking, and OpenAI prompt-cache keys |
 | `@aflekkas/vibecli/agent` | `createAgent(provider, system, opts)` — provider-agnostic stream loop with tool execution, abort handling, tool-result truncation, optional auto-compaction, and lifecycle hooks |
 | `@aflekkas/vibecli/scenarios` | `runScenario(agent, steps, opts?)` — scripted scenario runner for agent CLIs, drives a step list, asserts on assistant text, returns a structured result |
+| `@aflekkas/vibecli/chat` | `useAgentStream(agent, opts?)` React hook (turns reducer, streaming text accumulator, busy + AbortController, `onEvent` for tool/usage/abort/compaction surfacing, `onBeforeSend` for checkpoint snapshotting) and `<MessageList>` Ink component that renders turns with per-role styling from `useVibeConfig().messages.roles` |
 | `vibecli mcp` (bin subcommand) | Local stdio MCP server that wraps this package's README + `docs/*.md`. Plug into Claude Code so an agent can scaffold a vibecli CLI against the current API. See the **Docs MCP** section above. |
 
 ## 📚 Docs
@@ -156,6 +157,29 @@ const agent = createAgent(provider, "You are a helpful CLI assistant.", {
 for await (const ev of agent.send("what time is it?")) {
   if (ev.type === "text") process.stdout.write(ev.text);
   if (ev.type === "tool_start") console.error(`[tool] ${ev.name}`);
+}
+```
+
+Render the chat itself with one hook + one component — the hook owns the turns reducer, streaming-text accumulator, busy state, and abort controller; the component pulls per-role colors from `VibeConfigProvider`:
+
+```tsx
+import { useAgentStream, MessageList } from "@aflekkas/vibecli/chat";
+import { TextInput } from "@aflekkas/vibecli/text-input";
+
+function Chat({ agent }: { agent: Agent }) {
+  const { turns, send, busy, pushMeta, reset } = useAgentStream(agent);
+  const [input, setInput] = useState("");
+  return (
+    <Box flexDirection="column" gap={1}>
+      <MessageList turns={turns} />
+      <TextInput
+        value={input}
+        onChange={setInput}
+        placeholder={busy ? "thinking..." : "ask anything"}
+        onSubmit={(text) => { setInput(""); void send(text); }}
+      />
+    </Box>
+  );
 }
 ```
 

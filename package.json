@@ -44,7 +44,8 @@
     "./commands": "./src/commands/reserved.ts",
     "./frontmatter": "./src/frontmatter.ts",
     "./markdown-dir": "./src/markdown-dir.ts",
-    "./scenarios": "./src/scenarios.ts"
+    "./scenarios": "./src/scenarios.ts",
+    "./chat": "./src/chat.tsx"
   },
   "files": [
     "bin",

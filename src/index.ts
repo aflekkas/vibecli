@@ -143,3 +143,10 @@ export type {
   ScenarioResult,
   ScenarioStep,
 } from "./scenarios.ts";
+export { MessageList, useAgentStream } from "./chat.tsx";
+export type {
+  MessageListProps,
+  Turn,
+  UseAgentStreamOptions,
+  UseAgentStreamResult,
+} from "./chat.tsx";
