@@ -2,6 +2,7 @@
 
 > Skip the AI CLI boilerplate
 
+[![npm version](https://img.shields.io/npm/v/@aflekkas/vibecli.svg)](https://www.npmjs.com/package/@aflekkas/vibecli)
 [![My Skills](https://skillicons.dev/icons?i=ts,bun,react)](https://skillicons.dev)
 
 Reusable Ink + AI SDK primitives for vibecoded CLIs. Extracted from [rawdog](https://github.com/aflekkas/rawdog).
@@ -13,9 +14,9 @@ Pre-alpha. API will move. Used in production by rawdog.
 ## 📦 Install
 
 ```bash
-bun add vibecli
+bun add @aflekkas/vibecli
 # or
-npm install vibecli
+npm install @aflekkas/vibecli
 ```
 
 vibecli declares peer dependencies on `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`, `ink`, and `react`, install whichever your CLI uses.
