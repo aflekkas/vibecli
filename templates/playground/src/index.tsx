@@ -11,8 +11,11 @@ import { AiSdkProvider } from "@aflekkas/vibecli/providers/adapter";
 import { createAgent, type Agent } from "@aflekkas/vibecli/agent";
 import { readClipboardImage } from "@aflekkas/vibecli/clipboard";
 import { runScenario, type ScenarioStep } from "@aflekkas/vibecli/scenarios";
-import type { ContentBlock, Provider } from "@aflekkas/vibecli/providers";
+import { createCheckpointHistory } from "@aflekkas/vibecli/checkpoints";
+import { useAgentStream, MessageList } from "@aflekkas/vibecli/chat";
+import type { ContentBlock, Message, Provider } from "@aflekkas/vibecli/providers";
 import { readFile } from "node:fs/promises";
+import { buildTools } from "./tools.ts";
 
 // Model registry. Add an entry to expose a new model in `/model`.
 // Each entry needs: a stable id (the picker key), the provider name vibecli passes
@@ -43,19 +46,21 @@ const DEFAULT_MODEL_ID = "gpt-4o-mini";
 
 // Identity: change this string to give the CLI its own persona, name, voice, rules.
 // Swap at runtime with `agent.setSystem("...")`.
-const SYSTEM_PROMPT = "You are a helpful CLI assistant. Be concise.";
+const SYSTEM_PROMPT = [
+  "You are a helpful CLI coding assistant running in the user's terminal.",
+  "You have tools: bash (run shell), read_file, write_file, glob.",
+  "Use tools when the task needs filesystem or shell access. Be concise.",
+].join(" ");
 
 // Initial theme. Built-ins: pink, ocean, matrix, amber, claude, mono.
 // Type `/theme` while running to switch live, or define your own with
 // `defineTheme({ accent: "#hex", ... })` from "@aflekkas/vibecli/themes".
 const INITIAL_THEME: ThemeName = "pink";
 
-type Turn = { role: "user" | "assistant" | "meta"; text: string };
-
 async function runScenarioFromFile(scriptPath: string, provider: Provider): Promise<void> {
   const raw = await readFile(scriptPath, "utf8");
   const steps = JSON.parse(raw) as ScenarioStep[];
-  const agent = createAgent(provider, SYSTEM_PROMPT);
+  const agent = createAgent(provider, SYSTEM_PROMPT, { tools: buildTools() });
   const r = await runScenario(agent, steps);
   process.exit(r.failed > 0 ? 1 : 0);
 }
@@ -64,9 +69,12 @@ const HELP_TEXT = [
   "/model   switch model (router across configured providers)",
   "/theme   switch theme",
   "/clip    attach clipboard image to next message (macOS)",
+  "/undo    revert last turn (uses checkpoint history)",
+  "/redo    re-apply an undone turn",
+  "/tools   list available tools",
   "/clear   reset conversation",
   "/help    show commands",
-  "(empty submit exits)",
+  "(esc cancels in-flight generation; empty submit exits)",
 ].join("\n");
 
 function ModelPicker({
@@ -121,54 +129,57 @@ function Chat({
 }) {
   const { exit } = useApp();
   const config = useVibeConfig();
-  const accent = config.theme.colors.accent;
   const muted = config.theme.colors.muted;
 
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const [agent, setAgent] = useState<Agent | null>(null);
   const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState<"theme" | "model" | null>(null);
   const [pendingImage, setPendingImage] = useState<{ mediaType: string; data: string } | null>(null);
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
-  const agentRef = useRef<Agent | null>(null);
+  const toolsRef = useRef(buildTools());
+  const historyRef = useRef(createCheckpointHistory<Message[]>([], { limit: 50 }));
 
   useEffect(() => {
     const initial = MODELS.find((m) => m.id === DEFAULT_MODEL_ID) ?? MODELS[0]!;
-    agentRef.current = createAgent(initial.build(), SYSTEM_PROMPT);
+    setAgent(createAgent(initial.build(), SYSTEM_PROMPT, { tools: toolsRef.current }));
   }, []);
 
-  function pushMeta(text: string) {
-    setTurns((t) => [...t, { role: "meta", text }]);
-  }
+  const { turns, setTurns, send: sendStream, busy, pushMeta, abort, reset } = useAgentStream(agent, {
+    onBeforeSend: () => {
+      if (agent) historyRef.current.checkpoint(agent.state.messages.slice(), "pre-turn");
+    },
+    onEvent: (ev) => {
+      if (ev.type === "tool_start") {
+        const preview = JSON.stringify(ev.input).slice(0, 80);
+        pushMeta(`tool> ${ev.name} ${preview}`);
+      } else if (ev.type === "tool_end") {
+        const head = ev.output.split("\n").slice(0, 3).join("\n");
+        const more = ev.output.length > head.length ? ` (+${ev.output.length - head.length} chars)` : "";
+        pushMeta(`tool< ${ev.name}\n${head}${more}`);
+      } else if (ev.type === "turn_done") {
+        if (ev.usage) {
+          const cache = ev.usage.cacheRead ? ` cache:${ev.usage.cacheRead}` : "";
+          pushMeta(`tokens: in:${ev.usage.input} out:${ev.usage.output}${cache}`);
+        }
+      } else if (ev.type === "aborted") {
+        pushMeta("aborted.");
+      } else if (ev.type === "compacted") {
+        pushMeta(`compacted: ${ev.messagesBefore} → ${ev.messagesAfter} messages`);
+      }
+    },
+  });
+
+  useInput((_input, key) => {
+    if (key.escape && busy) abort();
+  });
 
   async function send(text: string) {
-    const agent = agentRef.current;
-    if (!agent) return;
     const blocks: ContentBlock[] = [{ type: "text", text }];
     if (pendingImage) {
       blocks.push({ type: "image", mediaType: pendingImage.mediaType, data: pendingImage.data });
       setPendingImage(null);
     }
-    setTurns((t) => [...t, { role: "user", text }, { role: "assistant", text: "" }]);
-    setBusy(true);
-    try {
-      for await (const ev of agent.send(blocks)) {
-        if (ev.type === "text") {
-          setTurns((t) => {
-            const next = t.slice();
-            const last = next[next.length - 1];
-            if (last && last.role === "assistant") {
-              next[next.length - 1] = { role: "assistant", text: last.text + ev.text };
-            }
-            return next;
-          });
-        } else if (ev.type === "error") {
-          setTurns((t) => [...t, { role: "assistant", text: `error: ${ev.message}` }]);
-        }
-      }
-    } finally {
-      setBusy(false);
-    }
+    await sendStream(blocks);
   }
 
   async function handleSlash(cmd: string) {
@@ -186,10 +197,41 @@ function Chat({
     }
     if (cmd === "/clear") {
       const current = MODELS.find((m) => m.id === modelId) ?? MODELS[0]!;
-      agentRef.current = createAgent(current.build(), SYSTEM_PROMPT);
-      setTurns([]);
+      setAgent(createAgent(current.build(), SYSTEM_PROMPT, { tools: toolsRef.current }));
+      historyRef.current.clear([]);
+      reset();
       setPendingImage(null);
       pushMeta("conversation reset.");
+      return;
+    }
+    if (cmd === "/tools") {
+      pushMeta("tools:\n" + toolsRef.current.map((t) => `  ${t.def.name}  ${t.def.description}`).join("\n"));
+      return;
+    }
+    if (cmd === "/undo") {
+      if (!agent) return;
+      if (!historyRef.current.canUndo) {
+        pushMeta("nothing to undo.");
+        return;
+      }
+      const prev = historyRef.current.undo();
+      if (prev) {
+        agent.state.messages = prev.value.slice();
+        setTurns((t) => t.filter((x) => x.role === "meta").concat({ role: "meta", text: "undone." }));
+      }
+      return;
+    }
+    if (cmd === "/redo") {
+      if (!agent) return;
+      if (!historyRef.current.canRedo) {
+        pushMeta("nothing to redo.");
+        return;
+      }
+      const next = historyRef.current.redo();
+      if (next) {
+        agent.state.messages = next.value.slice();
+        pushMeta("redone.");
+      }
       return;
     }
     if (cmd === "/clip") {
@@ -211,13 +253,7 @@ function Chat({
       <Text color={muted}>
         model: {modelId}. Type `/help` for commands. Submit empty to exit.
       </Text>
-      {turns.map((t, i) => (
-        <Box key={i} flexDirection="column">
-          <Text color={t.role === "user" ? accent : t.role === "meta" ? muted : undefined} dimColor={t.role === "meta"}>
-            {(t.role === "user" ? "you" : t.role === "meta" ? "meta" : "ai") + "> " + t.text}
-          </Text>
-        </Box>
-      ))}
+      <MessageList turns={turns} prefix={{ user: "you> ", assistant: "ai> ", meta: "meta> " }} />
       {pendingImage ? (
         <Text color={muted} dimColor>
           [image attached, send a message to deliver]
@@ -237,8 +273,8 @@ function Chat({
           value={modelId}
           onPick={(id) => {
             const next = MODELS.find((m) => m.id === id);
-            if (next && agentRef.current) {
-              agentRef.current.setProvider(next.build());
+            if (next && agent) {
+              agent.setProvider(next.build());
               setModelId(id);
               pushMeta(`model: ${id} (${next.providerName})`);
             }

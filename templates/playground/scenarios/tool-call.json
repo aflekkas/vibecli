@@ -1,0 +1,3 @@
+[
+  { "input": "Use the bash tool to run `echo vibecli-tools-work` and tell me what it printed.", "expectContains": "vibecli-tools-work" }
+]
