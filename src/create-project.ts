@@ -1,10 +1,18 @@
 import { spawn } from "node:child_process";
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
-import { basename, dirname, resolve } from "node:path";
+import { access, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { themeNames, type ThemeName } from "./themes.ts";
 
 export type PackageManager = "bun" | "npm";
+
+export const builtInTemplates = ["playground"] as const;
+export type BuiltInTemplate = (typeof builtInTemplates)[number];
+export const defaultTemplate: BuiltInTemplate = "playground";
+
+export function isBuiltInTemplate(value: string): value is BuiltInTemplate {
+  return (builtInTemplates as readonly string[]).includes(value);
+}
 
 export type CreateProjectOptions = {
   dir: string;
@@ -14,6 +22,7 @@ export type CreateProjectOptions = {
   vibecliVersion?: string;
   install?: boolean;
   theme?: ThemeName;
+  template?: BuiltInTemplate;
 };
 
 export type CreatedFile = {
@@ -29,7 +38,11 @@ export type CreateProjectResult = {
   vibecliVersion: string;
   installed: boolean;
   theme: ThemeName;
+  template: BuiltInTemplate;
 };
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const TEMPLATES_DIR = resolve(HERE, "..", "templates");
 
 async function fileExists(path: string): Promise<boolean> {
   try {
@@ -50,7 +63,43 @@ function packageName(input: string): string {
   return base || "vibecli-app";
 }
 
-function scripts(packageManager: PackageManager): Record<string, string> {
+async function walkTemplate(root: string): Promise<string[]> {
+  const out: string[] = [];
+  async function walk(dir: string) {
+    const entries = await readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(full);
+      } else if (entry.isFile()) {
+        out.push(relative(root, full));
+      }
+    }
+  }
+  await walk(root);
+  return out;
+}
+
+function substitutePlaceholders(
+  content: string,
+  vars: Record<string, string>,
+): string {
+  return content.replace(/__([A-Z_]+)__/g, (match, key: string) => {
+    return key in vars ? vars[key]! : match;
+  });
+}
+
+function targetRelativePath(templateRelPath: string): string {
+  const base = basename(templateRelPath);
+  if (base === "_gitignore") {
+    return join(dirname(templateRelPath), ".gitignore");
+  }
+  return templateRelPath;
+}
+
+type ScriptsBlock = Record<string, string>;
+
+function scriptsForPackageManager(packageManager: PackageManager): ScriptsBlock {
   return packageManager === "bun"
     ? {
         dev: "bun run src/index.tsx",
@@ -62,258 +111,35 @@ function scripts(packageManager: PackageManager): Record<string, string> {
       };
 }
 
-function packageJson(name: string, opts: { packageManager: PackageManager; vibecliVersion: string }) {
-  const useBun = opts.packageManager === "bun";
-  return `${JSON.stringify(
-    {
-      name,
-      version: "0.0.0",
-      private: true,
-      type: "module",
-      scripts: scripts(opts.packageManager),
-      dependencies: {
-        "@aflekkas/vibecli": opts.vibecliVersion,
-        "@ai-sdk/anthropic": "^3.0.71",
-        ai: "^6.0.168",
-        ink: "^5.0.1",
-        react: "^18.3.1",
-      },
-      devDependencies: {
-        "@types/react": "^18.3.12",
-        typescript: "^5.7.2",
-        ...(useBun ? { "@types/bun": "^1.3.0" } : { tsx: "^4.19.2" }),
-      },
-    },
-    null,
-    2,
-  )}\n`;
-}
-
-function tsconfigJson(packageManager: PackageManager): string {
-  return `${JSON.stringify(
-    {
-      compilerOptions: {
-        target: "ESNext",
-        module: "ESNext",
-        moduleResolution: "Bundler",
-        jsx: "react-jsx",
-        strict: true,
-        esModuleInterop: true,
-        skipLibCheck: true,
-        allowImportingTsExtensions: true,
-        noEmit: true,
-        types: packageManager === "bun" ? ["bun", "react"] : ["react"],
-      },
-      include: ["src/**/*"],
-    },
-    null,
-    2,
-  )}\n`;
-}
-
-function appSource(theme: ThemeName): string {
-  return `import React, { useEffect, useRef, useState } from "react";
-import { Box, Text, render, useApp } from "ink";
-import { anthropic } from "@ai-sdk/anthropic";
-import { TextInput } from "@aflekkas/vibecli/text-input";
-import { GradientText } from "@aflekkas/vibecli/ui";
-import { VibeConfigProvider, useVibeConfig } from "@aflekkas/vibecli/config";
-import { themes, type ThemeName } from "@aflekkas/vibecli/themes";
-import { ThemePicker } from "@aflekkas/vibecli/theme-picker";
-import { AiSdkProvider } from "@aflekkas/vibecli/providers/adapter";
-import { createAgent, type Agent } from "@aflekkas/vibecli/agent";
-
-// Swap the model in three lines:
-//   1. bun add @ai-sdk/<provider>          (e.g. @ai-sdk/openai)
-//   2. import { createX } from "@ai-sdk/<provider>";
-//   3. change \`name\`, \`model\`, and \`languageModel\` below.
-// Any provider in the Vercel AI SDK ecosystem works.
-const MODEL = "claude-sonnet-4-5";
-const provider = new AiSdkProvider({
-  name: "anthropic",
-  model: MODEL,
-  languageModel: anthropic(MODEL),
-});
-
-// Identity: change this string to give the CLI its own persona, name, voice, rules.
-// Swap at runtime with \`agent.setSystem("...")\`.
-const SYSTEM_PROMPT = "You are a helpful CLI assistant. Be concise.";
-
-// Initial theme. Built-ins: ${themeNames.join(", ")}.
-// Type \`/theme\` while running to switch live, or define your own with
-// \`defineTheme({ accent: "#hex", ... })\` from "@aflekkas/vibecli/themes".
-const INITIAL_THEME: ThemeName = "${theme}";
-
-type Turn = { role: "user" | "assistant"; text: string };
-
-function Chat({
-  themeName,
-  onPickTheme,
-}: {
-  themeName: ThemeName;
-  onPickTheme: (name: ThemeName) => void;
-}) {
-  const { exit } = useApp();
-  const config = useVibeConfig();
-  const accent = config.theme.colors.accent;
-  const muted = config.theme.colors.muted;
-
-  const [turns, setTurns] = useState<Turn[]>([]);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [picking, setPicking] = useState(false);
-  const agentRef = useRef<Agent | null>(null);
-
-  useEffect(() => {
-    agentRef.current = createAgent(provider, SYSTEM_PROMPT);
-  }, []);
-
-  async function send(text: string) {
-    const agent = agentRef.current;
-    if (!agent) return;
-    setTurns((t) => [...t, { role: "user", text }, { role: "assistant", text: "" }]);
-    setBusy(true);
-    try {
-      for await (const ev of agent.send(text)) {
-        if (ev.type === "text") {
-          setTurns((t) => {
-            const next = t.slice();
-            const last = next[next.length - 1];
-            if (last && last.role === "assistant") {
-              next[next.length - 1] = { role: "assistant", text: last.text + ev.text };
-            }
-            return next;
-          });
-        } else if (ev.type === "error") {
-          setTurns((t) => [...t, { role: "assistant", text: \`error: \${ev.message}\` }]);
-        }
-      }
-    } finally {
-      setBusy(false);
-    }
+function adaptPackageJson(
+  raw: string,
+  packageManager: PackageManager,
+): string {
+  const parsed = JSON.parse(raw) as {
+    scripts?: ScriptsBlock;
+    devDependencies?: Record<string, string>;
+  };
+  parsed.scripts = scriptsForPackageManager(packageManager);
+  if (packageManager === "npm") {
+    const dev = { ...(parsed.devDependencies ?? {}) };
+    delete dev["@types/bun"];
+    dev.tsx = dev.tsx ?? "^4.19.2";
+    parsed.devDependencies = dev;
   }
-
-  return (
-    <Box flexDirection="column" gap={1}>
-      <GradientText text="vibecli" />
-      <Text color={muted}>
-        Set ANTHROPIC_API_KEY in .env, then chat. Type \`/theme\` to switch colors. Submit empty to exit.
-      </Text>
-      {turns.map((t, i) => (
-        <Box key={i} flexDirection="column">
-          <Text color={t.role === "user" ? accent : undefined}>
-            {(t.role === "user" ? "you" : "ai") + "> " + t.text}
-          </Text>
-        </Box>
-      ))}
-      {picking ? (
-        <ThemePicker
-          value={themeName}
-          onPick={(name) => {
-            onPickTheme(name);
-            setPicking(false);
-          }}
-          onCancel={() => setPicking(false)}
-        />
-      ) : (
-        <TextInput
-          value={input}
-          onChange={setInput}
-          placeholder={busy ? "thinking..." : "ask anything (try /theme)"}
-          tabText="  "
-          onSubmit={(text) => {
-            const trimmed = text.trim();
-            if (!trimmed) {
-              exit();
-              return;
-            }
-            if (trimmed === "/theme") {
-              setInput("");
-              setPicking(true);
-              return;
-            }
-            setInput("");
-            void send(trimmed);
-          }}
-        />
-      )}
-    </Box>
-  );
+  return `${JSON.stringify(parsed, null, 2)}\n`;
 }
 
-function App() {
-  const [themeName, setThemeName] = useState<ThemeName>(INITIAL_THEME);
-  return (
-    <VibeConfigProvider config={themes[themeName]}>
-      <Chat themeName={themeName} onPickTheme={setThemeName} />
-    </VibeConfigProvider>
-  );
-}
-
-render(<App />);
-`;
-}
-
-function envExample(): string {
-  return `ANTHROPIC_API_KEY=\n`;
-}
-
-function readme(name: string, packageManager: PackageManager): string {
-  const install = packageManager === "bun" ? "bun install" : "npm install";
-  const dev = packageManager === "bun" ? "bun run dev" : "npm run dev";
-  return `# ${name}
-
-Ink + AI SDK agent CLI scaffolded with vibecli.
-
-## Run
-
-\`\`\`bash
-cp .env.example .env  # then paste your ANTHROPIC_API_KEY
-${install}
-${dev}
-\`\`\`
-
-## Identity / system prompt
-
-The CLI's persona lives in one string in \`src/index.tsx\`:
-
-\`\`\`ts
-const SYSTEM_PROMPT = "You are a helpful CLI assistant. Be concise.";
-\`\`\`
-
-Edit it to give the agent a name, voice, rules, role. Swap at runtime with \`agent.setSystem("new prompt")\`.
-
-## Swap the model
-
-The default is \`claude-sonnet-4-5\` via \`@ai-sdk/anthropic\`. Any Vercel AI SDK provider works. Three lines in \`src/index.tsx\`:
-
-1. Install the provider: \`bun add @ai-sdk/openai\` (or \`@ai-sdk/google\`, \`@ai-sdk/groq\`, etc.)
-2. Replace the import: \`import { openai } from "@ai-sdk/openai";\`
-3. Update the \`AiSdkProvider\` constructor: change \`name\` to \`"openai"\`, \`MODEL\` to e.g. \`"gpt-4.1"\`, and \`languageModel\` to \`openai(MODEL)\`.
-
-Set the matching API key env var (\`OPENAI_API_KEY\`, \`GOOGLE_GENERATIVE_AI_API_KEY\`, etc.). The AI SDK reads these automatically.
-
-## Add tools
-
-Pass a \`tools\` array to \`createAgent\`:
-
-\`\`\`ts
-createAgent(provider, system, {
-  tools: [
-    {
-      def: {
-        name: "now",
-        description: "Get the current ISO timestamp.",
-        input_schema: { type: "object", properties: {} },
-      },
-      run: async () => new Date().toISOString(),
-    },
-  ],
-});
-\`\`\`
-
-The agent loop calls your handlers when the model emits tool calls, and feeds results back automatically.
-`;
+function adaptTsconfig(raw: string, packageManager: PackageManager): string {
+  if (packageManager === "bun") return raw;
+  const parsed = JSON.parse(raw) as {
+    compilerOptions?: { types?: string[] };
+  };
+  if (parsed.compilerOptions?.types) {
+    parsed.compilerOptions.types = parsed.compilerOptions.types.filter(
+      (t) => t !== "bun",
+    );
+  }
+  return `${JSON.stringify(parsed, null, 2)}\n`;
 }
 
 async function writeProjectFile(
@@ -325,7 +151,9 @@ async function writeProjectFile(
   const path = resolve(dir, relativePath);
   const exists = await fileExists(path);
   if (exists && !force) {
-    throw new Error(`Refusing to overwrite ${relativePath}. Re-run with --force to replace existing files.`);
+    throw new Error(
+      `Refusing to overwrite ${relativePath}. Re-run with --force to replace existing files.`,
+    );
   }
   await mkdir(resolve(path, ".."), { recursive: true });
   await writeFile(path, contents);
@@ -334,8 +162,7 @@ async function writeProjectFile(
 
 async function readPackageJsonVersion(): Promise<string | null> {
   try {
-    const here = dirname(fileURLToPath(import.meta.url));
-    const pkgPath = resolve(here, "..", "package.json");
+    const pkgPath = resolve(HERE, "..", "package.json");
     const raw = await readFile(pkgPath, "utf8");
     const parsed = JSON.parse(raw) as { version?: string };
     return parsed.version ?? null;
@@ -344,9 +171,15 @@ async function readPackageJsonVersion(): Promise<string | null> {
   }
 }
 
-function runInstall(dir: string, packageManager: PackageManager): Promise<void> {
+function runInstall(
+  dir: string,
+  packageManager: PackageManager,
+): Promise<void> {
   return new Promise((resolveFn, rejectFn) => {
-    const child = spawn(packageManager, ["install"], { cwd: dir, stdio: "inherit" });
+    const child = spawn(packageManager, ["install"], {
+      cwd: dir,
+      stdio: "inherit",
+    });
     child.on("error", rejectFn);
     child.on("exit", (code) => {
       if (code === 0) resolveFn();
@@ -355,7 +188,9 @@ function runInstall(dir: string, packageManager: PackageManager): Promise<void> 
   });
 }
 
-export async function createProjectSkeleton(opts: CreateProjectOptions): Promise<CreateProjectResult> {
+export async function createProjectSkeleton(
+  opts: CreateProjectOptions,
+): Promise<CreateProjectResult> {
   const dir = resolve(opts.dir);
   const name = packageName(opts.name ?? basename(dir));
   const packageManager = opts.packageManager ?? "bun";
@@ -365,17 +200,38 @@ export async function createProjectSkeleton(opts: CreateProjectOptions): Promise
   const force = opts.force ?? false;
   const install = opts.install ?? true;
   const theme: ThemeName = opts.theme ?? themeNames[0]!;
+  const template: BuiltInTemplate = opts.template ?? defaultTemplate;
+
+  const templateRoot = resolve(TEMPLATES_DIR, template);
+  if (!(await fileExists(templateRoot))) {
+    throw new Error(
+      `Template "${template}" not found at ${templateRoot}. Available: ${builtInTemplates.join(", ")}.`,
+    );
+  }
 
   await mkdir(dir, { recursive: true });
 
-  const files = [
-    await writeProjectFile(dir, "package.json", packageJson(name, { packageManager, vibecliVersion }), force),
-    await writeProjectFile(dir, "tsconfig.json", tsconfigJson(packageManager), force),
-    await writeProjectFile(dir, "src/index.tsx", appSource(theme), force),
-    await writeProjectFile(dir, ".env.example", envExample(), force),
-    await writeProjectFile(dir, "README.md", readme(name, packageManager), force),
-    await writeProjectFile(dir, ".gitignore", "node_modules\n.DS_Store\n.env\n", force),
-  ];
+  const placeholders: Record<string, string> = {
+    NAME: name,
+    VIBECLI_VERSION: vibecliVersion,
+    THEME: theme,
+    THEME_NAMES: themeNames.join(", "),
+  };
+
+  const relPaths = await walkTemplate(templateRoot);
+  const files: CreatedFile[] = [];
+  for (const rel of relPaths) {
+    const abs = join(templateRoot, rel);
+    const raw = await readFile(abs, "utf8");
+    let content = substitutePlaceholders(raw, placeholders);
+    const target = targetRelativePath(rel);
+    if (basename(target) === "package.json") {
+      content = adaptPackageJson(content, packageManager);
+    } else if (basename(target) === "tsconfig.json") {
+      content = adaptTsconfig(content, packageManager);
+    }
+    files.push(await writeProjectFile(dir, target, content, force));
+  }
 
   let installed = false;
   if (install) {
@@ -383,5 +239,14 @@ export async function createProjectSkeleton(opts: CreateProjectOptions): Promise
     installed = true;
   }
 
-  return { dir, name, files, packageManager, vibecliVersion, installed, theme };
+  return {
+    dir,
+    name,
+    files,
+    packageManager,
+    vibecliVersion,
+    installed,
+    theme,
+    template,
+  };
 }

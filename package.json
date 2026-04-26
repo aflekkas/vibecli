@@ -48,6 +48,7 @@
   "files": [
     "bin",
     "src",
+    "templates",
     "docs",
     "README.md"
   ],

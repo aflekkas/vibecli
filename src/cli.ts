@@ -1,7 +1,14 @@
 #!/usr/bin/env bun
 
 import { createInterface } from "node:readline/promises";
-import { createProjectSkeleton, type PackageManager } from "./create-project.ts";
+import {
+  builtInTemplates,
+  createProjectSkeleton,
+  defaultTemplate,
+  isBuiltInTemplate,
+  type BuiltInTemplate,
+  type PackageManager,
+} from "./create-project.ts";
 import { isThemeName, themeNames, type ThemeName } from "./themes.ts";
 
 type CliOptions = {
@@ -12,6 +19,7 @@ type CliOptions = {
   vibecliVersion?: string;
   install: boolean;
   theme?: ThemeName;
+  template?: BuiltInTemplate;
   noPrompt: boolean;
 };
 
@@ -19,8 +27,11 @@ function help(): string {
   return `vibecli
 
 Usage:
-  vibecli init [dir] [--name <name>] [--pm bun|npm] [--vibecli <version>] [--theme <name>] [--no-prompt] [--no-install] [--force]
+  vibecli init [dir] [--template <name>] [--name <name>] [--pm bun|npm] [--vibecli <version>] [--theme <name>] [--no-prompt] [--no-install] [--force]
   vibecli mcp
+
+Templates:
+  ${builtInTemplates.join(", ")} (default: ${defaultTemplate})
 
 Themes:
   ${themeNames.join(", ")}
@@ -29,6 +40,7 @@ Examples:
   vibecli init my-cli
   vibecli init . --name my-cli --pm bun
   vibecli init my-cli --theme ocean --no-prompt
+  vibecli init my-cli --template playground
   vibecli mcp                     # local stdio MCP server exposing this package's docs
 `;
 }
@@ -73,6 +85,17 @@ function parseArgs(argv: string[]): CliOptions | "help" | "mcp" {
         throw new Error(`--theme must be one of: ${themeNames.join(", ")}`);
       }
       opts.theme = theme;
+      continue;
+    }
+    if (arg === "--template") {
+      const template = args[++i];
+      if (!template) throw new Error("--template requires a value");
+      if (!isBuiltInTemplate(template)) {
+        throw new Error(
+          `--template must be one of: ${builtInTemplates.join(", ")}`,
+        );
+      }
+      opts.template = template;
       continue;
     }
     if (arg === "--name") {
@@ -151,9 +174,11 @@ async function main() {
     vibecliVersion: parsed.vibecliVersion,
     install: parsed.install,
     theme,
+    template: parsed.template,
   });
 
   process.stdout.write(`Created ${result.name} in ${result.dir}\n`);
+  process.stdout.write(`  template: ${result.template}\n`);
   process.stdout.write(`  theme: ${result.theme}\n`);
   for (const file of result.files) {
     process.stdout.write(`  ${file.action} ${file.path}\n`);

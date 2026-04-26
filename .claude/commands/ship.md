@@ -34,7 +34,7 @@ Run sequentially. Stop and surface on any failure — never bypass.
 
 ## Hard rules
 
-- Confirm with the user before step 6. Publishing to npm + pushing a tagged commit are user-visible side effects.
+- **Do not ask for confirmation before publish/push.** `/ship` is pre-authorized for this repo — run `bun run ship` end-to-end. Only pause for genuinely destructive ops (`rm -rf`, `git push --force`, `git reset --hard`).
 - Never `--force` to main, never `--no-verify`, never edit `git config`.
 - If the diff has no behavioral change (only docs/comments), still ship — `documentation` parity is itself a valid release reason at 0.0.x.
 - If there's nothing uncommitted and nothing to publish, say so and stop. Do not invent work.

@@ -29,7 +29,15 @@ bun run dev
 
 The default scaffold ships a working chat loop against `claude-sonnet-4-5` via `@ai-sdk/anthropic`. Any Vercel AI SDK provider works — the generated `README.md` documents the 3-line swap (install `@ai-sdk/<provider>`, change one import, change one constructor arg).
 
-Flags: `--name <pkg>`, `--pm bun|npm`, `--vibecli <version>`, `--no-install` (skip auto-install), `--force` (overwrite existing files). The scaffolder writes `package.json`, `tsconfig.json`, `src/index.tsx`, `.env.example`, `README.md`, and `.gitignore`, then runs `bun install` (or `npm install`) in the new directory.
+### Templates
+
+The scaffolder copies a real, runnable template from `templates/<name>/` inside the published package. Today vibecli ships one built-in template:
+
+- **`playground`** (default) — kitchen-sink demo wiring up the agent loop, theming, theme picker, clipboard image paste, and slash commands (`/theme`, `/clip`, `/clear`, `/help`). The intent is to demonstrate as many vibecli primitives as possible in a single file you can edit down. Also serves as the reference target for vibecli's own pre-release smoke tests.
+
+Pick one with `--template <name>`. Future versions will ship more built-ins and accept community-contributed templates by short name.
+
+Flags: `--template <name>`, `--name <pkg>`, `--pm bun|npm`, `--vibecli <version>`, `--theme <name>`, `--no-prompt`, `--no-install` (skip auto-install), `--force` (overwrite existing files). The scaffolder writes `package.json`, `tsconfig.json`, `src/index.tsx`, `.env.example`, `README.md`, and `.gitignore`, then runs `bun install` (or `npm install`) in the new directory.
 
 The `vibecli` bin uses a `#!/usr/bin/env bun` shebang, so bun must be on `PATH` to invoke it directly. `bunx` is the safest entry point.
 
@@ -375,6 +383,12 @@ bun run ship
 ```
 
 rawdog intentionally consumes only the published package, so integration failures match what another consumer would see.
+
+## 🗺️ Roadmap
+
+- **More built-in templates.** `playground` is the only template today. Future built-ins might include a minimal "barebones" starter, an MCP-server-first template, a tools-heavy template, etc. Built-ins ship inside the npm package under `templates/<name>/`.
+- **Community / external templates.** `vibecli init --template <name>` will eventually resolve unknown names against a curated index (and/or `--template <github-user/repo>` for arbitrary git sources). The internal contract is already directory-shaped, so the surface to add is just resolution + caching.
+- **Playground as canonical pre-release smoke target.** The testing agent is being moved off the "smoke rawdog" hook and onto "scaffold the playground, drive scripted scenarios". Playground gains `--script` non-interactive mode + scenario files for matrix testing.
 
 ## 📄 License
 
