@@ -36,7 +36,8 @@
     "./repo-map": "./src/repo-map.ts",
     "./status-line": "./src/status-line.ts",
     "./providers": "./src/providers/types.ts",
-    "./providers/adapter": "./src/providers/adapter.ts"
+    "./providers/adapter": "./src/providers/adapter.ts",
+    "./agent": "./src/agent.ts"
   },
   "files": [
     "bin",

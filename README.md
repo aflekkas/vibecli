@@ -49,6 +49,7 @@ Use subpath imports for focused code. The root package also re-exports the curre
 | `@aflekkas/vibecli/status-line` | Status-line command runner and truncation helpers |
 | `@aflekkas/vibecli/providers` | Generic `Message`, `ContentBlock`, `ToolDef`, `Provider`, `StreamEvent` types you build against |
 | `@aflekkas/vibecli/providers/adapter` | `AiSdkProvider`, Vercel AI SDK adapter wired for Anthropic prompt caching, adaptive thinking, and OpenAI prompt-cache keys |
+| `@aflekkas/vibecli/agent` | `createAgent(provider, system, opts)` — provider-agnostic stream loop with tool execution, abort handling, tool-result truncation, optional auto-compaction, and lifecycle hooks |
 
 ## 🚀 Usage
 
@@ -81,6 +82,30 @@ const provider = new MyProvider();
 for await (const event of provider.stream({ system, messages, tools, signal })) {
   if (event.type === "text_delta") process.stdout.write(event.text);
   if (event.type === "tool_call") runTool(event.call);
+}
+```
+
+Run a streaming agent loop with tool execution:
+
+```ts
+import { createAgent } from "@aflekkas/vibecli/agent";
+
+const agent = createAgent(provider, "You are a helpful CLI assistant.", {
+  tools: [
+    {
+      def: {
+        name: "now",
+        description: "Get the current ISO timestamp.",
+        input_schema: { type: "object", properties: {} },
+      },
+      run: async () => new Date().toISOString(),
+    },
+  ],
+});
+
+for await (const ev of agent.send("what time is it?")) {
+  if (ev.type === "text") process.stdout.write(ev.text);
+  if (ev.type === "tool_start") console.error(`[tool] ${ev.name}`);
 }
 ```
 

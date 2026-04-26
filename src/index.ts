@@ -109,3 +109,15 @@ export type {
 } from "./providers/types.ts";
 export { AiSdkProvider } from "./providers/adapter.ts";
 export type { AdapterJsonValue, AdapterOpts, AdapterProviderOptions } from "./providers/adapter.ts";
+export { createAgent } from "./agent.ts";
+export type {
+  Agent,
+  AgentEvent,
+  AgentOptions,
+  AgentState,
+  LifecycleContext,
+  LifecycleEvent,
+  ToolEntry,
+  ToolHandler,
+  TurnUsage,
+} from "./agent.ts";
