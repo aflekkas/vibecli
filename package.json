@@ -10,7 +10,7 @@
     "url": "git+https://github.com/aflekkas/vibecli.git"
   },
   "bin": {
-    "vibecli": "./bin/vibecli"
+    "vibecli": "./bin/vibecli.js"
   },
   "keywords": [
     "ink",
@@ -46,9 +46,9 @@
   ],
   "scripts": {
     "typecheck": "bunx tsc --noEmit",
-    "ship": "bun run typecheck && npm version patch && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun update @aflekkas/vibecli && bun run typecheck)",
-    "ship:minor": "bun run typecheck && npm version minor && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun update @aflekkas/vibecli && bun run typecheck)",
-    "ship:major": "bun run typecheck && npm version major && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun update @aflekkas/vibecli && bun run typecheck)"
+    "ship": "bun run typecheck && npm version patch && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun add @aflekkas/vibecli@latest && bun run typecheck)",
+    "ship:minor": "bun run typecheck && npm version minor && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun add @aflekkas/vibecli@latest && bun run typecheck)",
+    "ship:major": "bun run typecheck && npm version major && npm publish --access public && git push --follow-tags && (cd ../rawdog && bun add @aflekkas/vibecli@latest && bun run typecheck)"
   },
   "peerDependencies": {
     "ai": "^6.0.168",
