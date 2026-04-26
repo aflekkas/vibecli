@@ -1,6 +1,6 @@
 {
   "name": "@aflekkas/vibecli",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Primitives for vibecoding your own CLI agent. Agents are loops; harnesses inject context and run commands; vibecli ships the rest.",
   "type": "module",
   "license": "MIT",
