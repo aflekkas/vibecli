@@ -3,6 +3,7 @@
 // exits, no provider/system assumptions — the caller owns the agent and
 // decides what to do with the result.
 
+import { readFile } from "node:fs/promises";
 import type { Agent } from "./agent.ts";
 
 export type ScenarioStep = {
@@ -115,4 +116,19 @@ export async function runScenario(
   writer.write(summary);
 
   return { passed, failed, total: steps.length, failures };
+}
+
+/**
+ * Reads a JSON file containing a `ScenarioStep[]` and runs it through `runScenario`.
+ * Caller owns the agent and decides what to do with the result (e.g. `process.exit`
+ * on failure). Useful as a one-liner for `--script <path>`-style CLI bootstraps.
+ */
+export async function runScenarioFile(
+  path: string,
+  agent: Agent,
+  opts: RunScenarioOptions = {},
+): Promise<ScenarioResult> {
+  const raw = await readFile(path, "utf8");
+  const steps = JSON.parse(raw) as ScenarioStep[];
+  return runScenario(agent, steps, opts);
 }
