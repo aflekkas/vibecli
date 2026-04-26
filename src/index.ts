@@ -1,11 +1,11 @@
-export { TextInput } from "./text-input.tsx";
+export { TextInput } from "./ui/text-input.tsx";
 export type {
   TextInputKeyBinding,
   TextInputOptions,
   TextInputProps,
   TextInputShortcut,
   TextInputSpecialKey,
-} from "./text-input.tsx";
+} from "./ui/text-input.tsx";
 export {
   mediaTypeForPath,
   readImageFile,
@@ -14,8 +14,8 @@ export {
   writeTempImage,
 } from "./clipboard.ts";
 export type { TempImageOptions } from "./clipboard.ts";
-export { defaultHighlightTheme, highlight } from "./highlight.ts";
-export type { HighlightOptions, HighlightTheme } from "./highlight.ts";
+export { defaultHighlightTheme, highlight } from "./ui/highlight.ts";
+export type { HighlightOptions, HighlightTheme } from "./ui/highlight.ts";
 export {
   createVibeConfig,
   defaultVibeConfig,
@@ -25,7 +25,7 @@ export {
   mergeTextInputOptions,
   useVibeConfig,
   VibeConfigProvider,
-} from "./ui-config.tsx";
+} from "./ui/ui-config.tsx";
 export type {
   LoadingConfig,
   MessageConfig,
@@ -35,7 +35,7 @@ export type {
   VibeConfig,
   VibeConfigInput,
   VibeConfigProviderProps,
-} from "./ui-config.tsx";
+} from "./ui/ui-config.tsx";
 export {
   createTheme,
   defaultTheme,
@@ -46,8 +46,8 @@ export {
   pinkGradientAt,
   wrapText,
   GradientText,
-} from "./ui.tsx";
-export type { GradientConfig, GradientTextProps, VibeTheme, VibeThemeInput } from "./ui.tsx";
+} from "./ui/ui.tsx";
+export type { GradientConfig, GradientTextProps, VibeTheme, VibeThemeInput } from "./ui/ui.tsx";
 export { withRetry } from "./retry.ts";
 export type { RetryOpts } from "./retry.ts";
 export { createProjectSkeleton } from "./create-project.ts";
@@ -98,8 +98,8 @@ export {
   truncateStatusLine,
 } from "./status-line.ts";
 export type { StatusLineCommandOptions, StatusLinePayload } from "./status-line.ts";
-export { Picker } from "./picker.tsx";
-export type { PickerItem, PickerProps } from "./picker.tsx";
+export { Picker } from "./ui/picker.tsx";
+export type { PickerItem, PickerProps } from "./ui/picker.tsx";
 export type {
   Role,
   ToolCall,
@@ -111,10 +111,10 @@ export type {
 } from "./providers/types.ts";
 export { AiSdkProvider } from "./providers/adapter.ts";
 export type { AdapterJsonValue, AdapterOpts, AdapterProviderOptions } from "./providers/adapter.ts";
-export { defineTheme, themes, themeNames, isThemeName } from "./themes.ts";
-export type { DefineThemeInput, ThemeName } from "./themes.ts";
-export { ThemePicker } from "./theme-picker.tsx";
-export type { ThemePickerProps } from "./theme-picker.tsx";
+export { defineTheme, themes, themeNames, isThemeName } from "./ui/themes.ts";
+export type { DefineThemeInput, ThemeName } from "./ui/themes.ts";
+export { ThemePicker } from "./ui/theme-picker.tsx";
+export type { ThemePickerProps } from "./ui/theme-picker.tsx";
 export { parseFrontmatter, parseBool, deriveDescription } from "./frontmatter.ts";
 export type { Frontmatter } from "./frontmatter.ts";
 export { loadMarkdownDir } from "./markdown-dir.ts";
@@ -146,15 +146,15 @@ export type {
   ScenarioResult,
   ScenarioStep,
 } from "./scenarios.ts";
-export { defineModel, ModelPicker } from "./models.tsx";
-export type { ModelEntry, ModelPickerProps } from "./models.tsx";
-export { MessageList, useAgentStream } from "./chat.tsx";
+export { defineModel, ModelPicker } from "./ui/models.tsx";
+export type { ModelEntry, ModelPickerProps } from "./ui/models.tsx";
+export { MessageList, useAgentStream } from "./ui/chat.tsx";
 export type {
   MessageListProps,
   Turn,
   UseAgentStreamOptions,
   UseAgentStreamResult,
-} from "./chat.tsx";
+} from "./ui/chat.tsx";
 export {
   loadSettingsHierarchy,
   mergeSettings,

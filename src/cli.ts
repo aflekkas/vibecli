@@ -9,7 +9,7 @@ import {
   type BuiltInTemplate,
   type PackageManager,
 } from "./create-project.ts";
-import { isThemeName, themeNames, type ThemeName } from "./themes.ts";
+import { isThemeName, themeNames, type ThemeName } from "./ui/themes.ts";
 
 type CliOptions = {
   dir: string;

@@ -1,8 +1,8 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { useVibeConfig, type MessageRole } from "./ui-config.tsx";
-import type { Agent, AgentEvent } from "./agent.ts";
-import type { ContentBlock } from "./providers/types.ts";
+import type { Agent, AgentEvent } from "../agent.ts";
+import type { ContentBlock } from "../providers/types.ts";
 
 export type Turn = {
   role: MessageRole;

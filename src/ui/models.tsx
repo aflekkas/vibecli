@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text, useInput } from "ink";
 import { useVibeConfig } from "./ui-config.tsx";
-import type { Provider } from "./providers/types.ts";
+import type { Provider } from "../providers/types.ts";
 
 export type ModelEntry = {
   id: string;

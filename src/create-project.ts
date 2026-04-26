@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { access, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { themeNames, type ThemeName } from "./themes.ts";
+import { themeNames, type ThemeName } from "./ui/themes.ts";
 
 export type PackageManager = "bun" | "npm";
 

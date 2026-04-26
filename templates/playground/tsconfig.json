@@ -13,10 +13,18 @@
     "baseUrl": ".",
     "paths": {
       "@aflekkas/vibecli": ["../../src/index.ts"],
-      "@aflekkas/vibecli/config": ["../../src/ui-config.tsx"],
+      "@aflekkas/vibecli/config": ["../../src/ui/ui-config.tsx"],
       "@aflekkas/vibecli/providers": ["../../src/providers/types.ts"],
       "@aflekkas/vibecli/commands": ["../../src/commands/reserved.ts"],
       "@aflekkas/vibecli/slash": ["../../src/commands/slash.ts"],
+      "@aflekkas/vibecli/text-input": ["../../src/ui/text-input.tsx"],
+      "@aflekkas/vibecli/ui": ["../../src/ui/ui.tsx"],
+      "@aflekkas/vibecli/themes": ["../../src/ui/themes.ts"],
+      "@aflekkas/vibecli/theme-picker": ["../../src/ui/theme-picker.tsx"],
+      "@aflekkas/vibecli/picker": ["../../src/ui/picker.tsx"],
+      "@aflekkas/vibecli/chat": ["../../src/ui/chat.tsx"],
+      "@aflekkas/vibecli/models": ["../../src/ui/models.tsx"],
+      "@aflekkas/vibecli/highlight": ["../../src/ui/highlight.ts"],
       "@aflekkas/vibecli/*": ["../../src/*"]
     }
   },
